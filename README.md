@@ -1,2 +1,2 @@
 # Computational-Intelligence
-Exercizes from the Computational Intelligence course at the Politecnico of Turin 
+Material and exercizes from the Computational Intelligence 2023/2024 course at the Politecnico of Turin 
