@@ -1,9 +1,11 @@
 from enum import Enum
 
 MODE = 'test'
-ITERATIONS = 10000
-N = 3
+ITERATIONS = 1_000_000
+TEST_ITERATION = 5_000
+N = 5
 INVALID_MOVES = False
+TRANSFORMATION = False
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_MOVES else 4 * (N - 1) * 4  - 4*N 
 
 '''Encoding of the moves'''
@@ -33,11 +35,15 @@ DRAW_REWARD = 0
 
 '''Values for the DQN player'''
 PATH = './models/'
-MODEL_NAME = f'model_{N}{"_invalid_moves" if INVALID_MOVES else ""}_{ITERATIONS}.pth'
+MODEL_NAME = f'model_{N}_v0{"_invalid_moves" if INVALID_MOVES else ""}_{ITERATIONS // 1000}K.pth'
+
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
+
+GAMMA = 0.5
+BATCH_SIZE = 16
+TAU = 0.03
+EPSILON_MODE = 0
 EPSILON = 0.2
-GAMMA = 0.8
-BATCH_SIZE = 2 * ACTION_SPACE
-TAU = 0.02
+EPSILON_B = 10000 // BATCH_SIZE
 

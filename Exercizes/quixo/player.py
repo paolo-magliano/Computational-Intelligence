@@ -70,57 +70,51 @@ class DQN(nn.Module):
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x, transformations = normalize_board(x)
+        if TRANSFORMATION:
+            x, transformations = normalize_board(x)
         
         x = x.flatten().float()
         x = self.non_linearity(self.fc1(x))
         x = self.non_linearity(self.fc2(x))
         x = self.fc3(x)
 
-        # for action, score in zip([get_move_from_index(i) for i in range(ACTION_SPACE)], x.tolist()):
-        #     print(f'\tMove {action}: {score:.2f}\t')
+        if TRANSFORMATION:
+            inverse = get_inverse_transformation(transformations)
+            move_transformations = get_move_transformations(inverse)
+            actions = [get_move_from_index(i) for i in range(len(x))]
+            transformed_actions = [transform_move(from_pos, move, move_transformations) for from_pos, move in actions]
+            transformed_index = [get_index_from_move(action) for action in transformed_actions]
+            x = x.scatter(0, torch.tensor(transformed_index), x)
 
-        # inverse = get_inverse_transformation(transformations)
-
-        # move_transformations = get_move_transformations(inverse)
-
-        # actions = [get_move_from_index(i) for i in range(len(x))]
-
-        # transformed_actions = [transform_move(from_pos, move, move_transformations) for from_pos, move in actions]
-
-        # transformed_index = [get_index_from_move(action) for action in transformed_actions]
-
-        # # print(f'Original: {transformations}')
-        # # print(f'Inverse: {inverse}')
-        # # print(f'Move transformations: {move_transformations}')
-        # # for action, transformed_action, index in zip(actions, transformed_actions, transformed_index):
-        # #     print(f'{action} -> {transformed_action} -> {index}')
-        
-        # x = x.scatter(0, torch.tensor(transformed_index), x)
+            # print(f'Original: {transformations}')
+            # print(f'Inverse: {inverse}')
+            # print(f'Move transformations: {move_transformations}')
+            # for action, transformed_action, index in zip(actions, transformed_actions, transformed_index):
+            #     print(f'{action} -> {transformed_action} -> {index}')
 
         return x
 
 class DQNPlayer(Player):
-    def __init__(self, mode: str = 'train', load: bool = False) -> None:
+    def __init__(self, mode: str = 'train', path: str = f'{PATH}{MODEL_NAME}') -> None:
         super().__init__()
         self.mode = mode
+        self.n_steps = 0
 
         self.policy_net = DQN()
         self.target_net = DQN()
 
-        if load and os.path.exists(f'{PATH}{MODEL_NAME}'):
-            self.policy_net.load_state_dict(torch.load(f'{PATH}{MODEL_NAME}'))
+        if self.mode == 'test' and os.path.exists(path):
+            self.policy_net.load_state_dict(torch.load(path))
+            self.policy_net.eval()
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
         self.loss_function = nn.MSELoss()
-        self.previous_games = []
-
-        if mode == 'test':
-            self.policy_net.eval()
+        self.previous_games = []            
 
     def make_move(self, game: 'Game', player: int) -> tuple[tuple[int, int], Move]:
-        if random.random() < EPSILON and self.mode == 'train': #_B / (EPSILON_B + len(self.previous_games))
+        epsilon = EPSILON if EPSILON_MODE == 0 else EPSILON_B / (EPSILON_B + self.n_steps)
+        if random.random() < epsilon and self.mode == 'train': #_B / (EPSILON_B + len(self.previous_games))
             actions_score = self.policy_net(torch.tensor(game._board))
             actions_score = F.softmax(actions_score, dim=0)
             actions_score[torch.argmax(actions_score)] = 0
@@ -190,11 +184,15 @@ class DQNPlayer(Player):
 
                     # input("Press Enter to continue...")
         
-        self.optimizer.step()
-        self.optimizer.zero_grad()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
 
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
+            target_net_state_dict = self.target_net.state_dict()
+            policy_net_state_dict = self.policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+            self.target_net.load_state_dict(target_net_state_dict)
+
+            self.previous_games = []
+            self.n_steps += 1
+
