@@ -11,7 +11,10 @@ from player import Player
 class Game(object):
     def __init__(self, player: int = None) -> None:
         self._board =  np.ones((N, N), dtype=np.int8) * EMPTY 
-        self.player = player if player else random.choice([X, O])
+        # self.player = player if player else random.choice([X, O])
+
+    def __eq__(self, other: 'Game') -> bool:
+        return np.array_equal(self._board, other._board)
 
     def get_board(self) -> np.ndarray:
         '''
@@ -63,24 +66,24 @@ class Game(object):
             return self._board[0, -1]
         return EMPTY
     
-    def play(self, player1: Player, player2: Player) -> int:
-        '''Play the game. Returns the winning player'''
-        states = []
-        rewards = []
-        players = {
-            X: player1,
-            O: player2
-        }
+    # def play(self, player1: Player, player2: Player) -> int:
+    #     '''Play the game. Returns the winning player'''
+    #     states = []
+    #     rewards = []
+    #     players = {
+    #         X: player1,
+    #         O: player2
+    #     }
         
-        winner = EMPTY
-        while winner == EMPTY:
-            self.player = X + O - self.player 
-            ok = False
-            while not ok:
-                from_pos, slide = players[self.player].make_move(self)
-                ok = self.move(from_pos, slide, self.player)
-            winner = self.check_winner()
-        return winner
+    #     winner = EMPTY
+    #     while winner == EMPTY:
+    #         self.player = X + O - self.player 
+    #         ok = False
+    #         while not ok:
+    #             from_pos, slide = players[self.player].make_move(self)
+    #             ok = self.move(from_pos, slide, self.player)
+    #         winner = self.check_winner()
+    #     return winner
 
     def move(self, from_pos: tuple[int, int], slide: Move, player_id: int) -> bool:
         '''Perform a move'''

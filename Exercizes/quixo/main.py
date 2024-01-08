@@ -47,10 +47,12 @@ if __name__ == '__main__':
     assert all([get_index_from_move(get_move_from_index(i)) == i for i in range(ACTION_SPACE)]), 'Wrong index conversion'
 
     player = DQNPlayer(mode=MODE)
-    env = Environment(RandomPlayer())
+    
+    env_player = [RandomPlayer()] if VERSION == 0 else [RandomPlayer(), DQNPlayer(mode='test', path=f'{PATH}model_{N}_v{VERSION - 1}_1000K.pth')] 
 
     start = time.time()
     for i in range(iteration):
+        env = Environment(random.choice(env_player))
         rewards = game(env, player)
         if rewards[-1] == WIN_REWARD:
             win += 1

@@ -99,6 +99,10 @@ class DQNPlayer(Player):
         super().__init__()
         self.mode = mode
         self.n_steps = 0
+        self.previous_games = []  
+        self.invalid_move = 0
+        self.invalid_game = None
+
 
         self.policy_net = DQN()
         self.target_net = DQN()
@@ -110,7 +114,7 @@ class DQNPlayer(Player):
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
         self.loss_function = nn.MSELoss()
-        self.previous_games = []            
+                  
 
     def make_move(self, game: 'Game', player: int) -> tuple[tuple[int, int], Move]:
         epsilon = EPSILON if EPSILON_MODE == 0 else EPSILON_B / (EPSILON_B + self.n_steps)
@@ -126,10 +130,18 @@ class DQNPlayer(Player):
         else:
             if self.mode == 'test':
                 with torch.no_grad():
+                    if self.invalid_game and self.invalid_game == game:
+                        k_actions_score = self.invalid_move
+                    else:
+                        k_actions_score = 0
+                        self.invalid_game = None
+                        self.invalid_move = 0
+
                     actions_score = self.policy_net(torch.tensor(game._board))
+                    action_index = torch.topk(actions_score, 1 + k_actions_score).indices[-1].item()
             else:
                 actions_score = self.policy_net(torch.tensor(game._board))
-            action_index = torch.argmax(actions_score).item()
+                action_index = torch.argmax(actions_score).item()
             from_pos, move = get_move_from_index(action_index)
 
             # for action, score in zip([get_move_from_index(i) for i in range(ACTION_SPACE)], actions_score.tolist()):
@@ -195,4 +207,9 @@ class DQNPlayer(Player):
 
             self.previous_games = []
             self.n_steps += 1
+
+    def track_invalid_move(self, game: 'Game') -> None:
+        self.invalid_move += 1
+        self.invalid_game = deepcopy(game)
+
 
