@@ -47,8 +47,7 @@ if __name__ == '__main__':
     assert all([get_index_from_move(get_move_from_index(i)) == i for i in range(ACTION_SPACE)]), 'Wrong index conversion'
 
     player = DQNPlayer(mode=MODE)
-    
-    env_player = [RandomPlayer()] if VERSION == 0 else [RandomPlayer(), DQNPlayer(mode='test', path=f'{PATH}model_{N}_v{VERSION - 1}_1000K.pth')] 
+    env_player = [RandomPlayer()] + [DQNPlayer(mode='test', path=f'{PATH}model_{N}_v{VERSION - 1}_1000K.pth') for _ in range(VERSION)]
 
     start = time.time()
     for i in range(iteration):

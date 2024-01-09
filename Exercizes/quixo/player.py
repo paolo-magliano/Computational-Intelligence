@@ -103,7 +103,6 @@ class DQNPlayer(Player):
         self.invalid_move = 0
         self.invalid_game = None
 
-
         self.policy_net = DQN()
         self.target_net = DQN()
 

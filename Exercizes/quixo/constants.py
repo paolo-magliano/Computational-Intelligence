@@ -1,6 +1,6 @@
 from enum import Enum
 
-MODE = 'train'
+MODE = 'test'
 N = 5
 VERSION = 1
 ITERATIONS = 1_000_000
@@ -37,7 +37,7 @@ DRAW_REWARD = 0
 
 '''Values for the DQN player'''
 PATH = './models/'
-MODEL_NAME = f'model_{N}_v{VERSION}{"_invalid_moves" if INVALID_MOVES else ""}_{ITERATIONS // 1000}K.pth'
+MODEL_NAME = f'model_{N}_v{VERSION}_{ITERATIONS // 1000}K{"_invalid_moves" if INVALID_MOVES else ""}.pth'
 
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
