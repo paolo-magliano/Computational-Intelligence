@@ -1,26 +1,20 @@
 from enum import Enum
 
-MODE = 'test'
-N = 5
-VERSION = 1
-ITERATIONS = 1_000_000
-TEST_ITERATION = 5_000
+MODE = 'train'           # 'train' or 'test' 
+N = 5                   # Board size
+VERSION = 0             # Version of the model to use
+ITERATIONS = 5_000  # Number of iterations to train
+TEST_ITERATION = 5_000  # Number of iterations to test
+INVALID_MOVES = False   # Include invalid moves in the action space
+TRANSFORMATION = False  # Use board transformations inside the network
 
-INVALID_MOVES = False
-TRANSFORMATION = False
+'''Number of possible actions'''
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_MOVES else 4 * (N - 1) * 4 - 4*N 
-
-'''Encoding of the moves'''
-class Move(Enum):
-    TOP = 0
-    BOTTOM = 1
-    LEFT = 2
-    RIGHT = 3
 
 '''Encoding of the board'''
 X = 1
-O = -1
-EMPTY = 0
+O = 0
+EMPTY = -1
 
 CHARS = {
     X: 'X',
@@ -37,7 +31,7 @@ DRAW_REWARD = 0
 
 '''Values for the DQN player'''
 PATH = './models/'
-MODEL_NAME = f'model_{N}_v{VERSION}_{ITERATIONS // 1000}K{"_invalid_moves" if INVALID_MOVES else ""}.pth'
+MODEL_NAME = f'model1_{N}_v{VERSION}_{ITERATIONS // 1000}K{"_invalid_moves" if INVALID_MOVES else ""}.pth'
 
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
