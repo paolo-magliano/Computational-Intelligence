@@ -95,7 +95,7 @@ class DQN(nn.Module):
         return x
 
 class DQNPlayer(Player):
-    def __init__(self, mode: str = 'train', path: str = f'{PATH}{MODEL_NAME}') -> None:
+    def __init__(self, mode: str = 'train', load: bool = False, path: str = f'{PATH}{MODEL_NAME}') -> None:
         super().__init__()
         self.mode = mode
         self.n_steps = 0
@@ -106,7 +106,7 @@ class DQNPlayer(Player):
         self.policy_net = DQN()
         self.target_net = DQN()
 
-        if self.mode == 'test' and os.path.exists(path):
+        if (self.mode == 'test' or load) and os.path.exists(path):
             self.policy_net.load_state_dict(torch.load(path))
             self.policy_net.eval()
         self.target_net.load_state_dict(self.policy_net.state_dict())
