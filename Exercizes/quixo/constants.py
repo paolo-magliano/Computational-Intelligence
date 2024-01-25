@@ -1,13 +1,15 @@
 from enum import Enum
 
+
 MODE = 'train'           # 'train' or 'test' 
 N = 5                   # Board size
-VERSION = 0             # Version of the model to use
-ITERATIONS = 1_00_000  # Number of iterations to train
+VERSION = 2             # Version of the model to use
+ITERATIONS = 1_000_000  # Number of iterations to train
 TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network
-INVALID_MOVES = True    # Allow invalid moves during the training, so the agent lose if it makes an invalid move
+INVALID_MOVES = False     # Allow invalid moves during the training, so the agent lose if it makes an invalid move
+LOAD = 'simple'         # 'simple' or 'mix' select the model to load for the environment
 
 '''Number of possible actions'''
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_SPACE else 4 * (N - 1) * 4 - 4*N 
@@ -31,9 +33,7 @@ LOSE_REWARD = 0
 DRAW_REWARD = 0
 
 '''Values for the DQN player'''
-PATH = './models/'
-MODEL_NAME = f'model_{N}_v{VERSION}_{ITERATIONS // 1000}K{"_IS" if INVALID_SPACE else ""}{"_IM" if INVALID_MOVES else ""}{"_T" if TRANSFORMATION else ""}_MIX.pth'
-
+MLP_0_HIDDEN_SIZE = 0
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
 
@@ -45,14 +45,27 @@ EPSILON_MODE = 0
 EPSILON = 0.2
 EPSILON_B = 1000 // BATCH_SIZE
 
-MODEL_PATHS = [
-    f'{PATH}model_5_v0_100K_IM.pth',
-    f'{PATH}model_5_v0_100K.pth',
-    f'{PATH}model_5_v0_1000K_IM.pth',
-    f'{PATH}model_5_v0_1000K.pth',
-    f'{PATH}model_5_v1_100K_IM.pth',
-    f'{PATH}model_5_v1_100K.pth',
-    f'{PATH}model_5_v1_1000K_IM.pth',
-    f'{PATH}model_5_v2_100K.pth',
-    f'{PATH}model_5_v2_1000K_IM.pth',
-]
+'''Values for load and save'''
+PATH = './models/'
+
+def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=INVALID_SPACE, invalid_moves=INVALID_MOVES, transformation=TRANSFORMATION, load=LOAD, mlp_0_size=MLP_0_HIDDEN_SIZE) -> str:
+    '''Returns the path of the model to use'''
+
+    return f'{path}model_{n}_v{version}_{iterations // 1000}K{"_IS" if invalid_space else ""}{"_IM" if invalid_moves else ""}{"_T" if transformation else ""}{f"_{load.upper()}" if load != "simple" else ""}{f"_{mlp_0_size}S" if mlp_0_size != 0 else ""}.pth'
+
+MODEL_NAME = path()
+LOAD_PATHS = {
+    'simple': [path(version=v) for v in range(VERSION)],
+    'all': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0) for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
+    'mix': [
+        f'{PATH}model_5_v0_100K_IM.pth',
+        f'{PATH}model_5_v0_100K.pth',
+        f'{PATH}model_5_v0_1000K_IM.pth',
+        f'{PATH}model_5_v0_1000K.pth',
+        f'{PATH}model_5_v1_100K_IM.pth',
+        f'{PATH}model_5_v1_100K.pth',
+        f'{PATH}model_5_v1_1000K_IM.pth',
+        f'{PATH}model_5_v2_100K.pth',
+        f'{PATH}model_5_v2_1000K_IM.pth',
+    ],
+}

@@ -3,6 +3,7 @@ import random
 import os
 import numpy as np
 from copy import deepcopy
+import re
 
 import torch
 import torch.nn as nn
@@ -57,17 +58,20 @@ class HumanPlayer(Player):
     
 class DQN(nn.Module):
     '''Deep Q Network for the agent player'''
-    def __init__(self) -> None:
+    def __init__(self, input_size: int = N * N, mlp_0_size: int = MLP_0_HIDDEN_SIZE, mlp_1_size: int = MLP_1_HIDDEN_SIZE, mlp_2_size: int = MLP_2_HIDDEN_SIZE, output_size: int = ACTION_SPACE) -> None:
         super().__init__()
-        self.fc1 = nn.Linear(N * N, MLP_1_HIDDEN_SIZE)
-        self.fc2 = nn.Linear(MLP_1_HIDDEN_SIZE, MLP_2_HIDDEN_SIZE)
-        self.fc3 = nn.Linear(MLP_2_HIDDEN_SIZE, ACTION_SPACE)
+        self.fc0 = nn.Linear(input_size, mlp_0_size) if mlp_0_size else None
+        self.fc1 = nn.Linear(mlp_0_size, mlp_1_size) if mlp_0_size else nn.Linear(input_size, mlp_1_size)
+        self.fc2 = nn.Linear(mlp_1_size, mlp_2_size)
+        self.fc3 = nn.Linear(mlp_2_size, output_size)
         self.non_linearity = nn.ReLU()
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
 
         x = x.flatten().float()
+        if self.fc0:
+            x = self.non_linearity(self.fc0(x))
         x = self.non_linearity(self.fc1(x))
         x = self.non_linearity(self.fc2(x))
         x = self.fc3(x)
@@ -75,7 +79,7 @@ class DQN(nn.Module):
         return x
 
 class DQNPlayer(Player):
-    def __init__(self, mode: str = 'train', load: bool = False, path: str = f'{PATH}{MODEL_NAME}') -> None:
+    def __init__(self, mode: str = 'train', load: bool = False, path: str = MODEL_NAME) -> None:
         super().__init__()
         '''Attribute about the agent'''
         self.mode = mode
@@ -87,14 +91,18 @@ class DQNPlayer(Player):
         self.path = ""
 
         '''Attributes about the network'''
-        self.policy_net = DQN()
-        self.target_net = DQN()
+
 
         if (self.mode == 'test' or load) and os.path.exists(path):
-            print(f'Loading model from {path}')
+            mlp_0_size = int(re.search(r'_(\d+)S', path).group(1)) if re.search(r'_(\d+)S', path) else 0
+            self.policy_net = DQN(mlp_0_size=mlp_0_size)
+            self.target_net = DQN(mlp_0_size=mlp_0_size)
             self.policy_net.load_state_dict(torch.load(path))
             self.policy_net.eval()
             self.path = path
+        else:
+            self.policy_net = DQN()
+            self.target_net = DQN()
             
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
