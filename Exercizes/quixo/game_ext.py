@@ -5,9 +5,8 @@ from utils import *
 class GameExt(Game):
     def __init__(self, board=None, n=N) -> None:
         super().__init__()
-        self._board = board if board else np.ones((n, n), dtype=np.uint8) * -1
+        self._board = board if board is not None else np.ones((n, n), dtype=np.uint8) * -1
         self.n = n
-
 
     def move(self, from_pos: tuple[int, int], slide: Move, player_id: int) -> bool:
         '''Perform a move'''
