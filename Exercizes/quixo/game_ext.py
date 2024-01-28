@@ -3,6 +3,12 @@ from constants import *
 from utils import *
 
 class GameExt(Game):
+    def __init__(self, board=None, n=N) -> None:
+        super().__init__()
+        self._board = board if board else np.ones((n, n), dtype=np.uint8) * -1
+        self.n = n
+
+
     def move(self, from_pos: tuple[int, int], slide: Move, player_id: int) -> bool:
         '''Perform a move'''
         if player_id > 2:
@@ -23,18 +29,22 @@ class GameExt(Game):
                 print(CHARS[cell], end=' ')
             print()  
 
+    def set_current_player(self, player_id: int) -> None:
+        '''Set the current player'''
+        self.current_player_idx = player_id
+
     def __take(self, from_pos: tuple[int, int], player_id: int) -> bool:
         '''Take piece'''
         # acceptable only if in border
         acceptable: bool = (
             # check if it is in the first row
-            (from_pos[0] == 0 and from_pos[1] < 5)
+            (from_pos[0] == 0 and from_pos[1] < self.n)
             # check if it is in the last row
-            or (from_pos[0] == 4 and from_pos[1] < 5)
+            or (from_pos[0] == self.n - 1 and from_pos[1] < self.n)
             # check if it is in the first column
-            or (from_pos[1] == 0 and from_pos[0] < 5)
+            or (from_pos[1] == 0 and from_pos[0] < self.n)
             # check if it is in the last column
-            or (from_pos[1] == 4 and from_pos[0] < 5)
+            or (from_pos[1] == self.n - 1 and from_pos[0] < self.n)
             # and check if the piece can be moved by the current player
         ) and (self._board[from_pos] < 0 or self._board[from_pos] == player_id)
         if acceptable:
@@ -44,7 +54,7 @@ class GameExt(Game):
     def __slide(self, from_pos: tuple[int, int], slide: Move) -> bool:
         '''Slide the other pieces'''
         # define the corners
-        SIDES = [(0, 0), (0, 4), (4, 0), (4, 4)]
+        SIDES = [(0, 0), (0, self.n - 1), (self.n - 1, 0), (self.n - 1, self.n - 1)]
         # if the piece position is not in a corner
         if from_pos not in SIDES:
             # if it is at the TOP, it can be moved down, left or right
@@ -52,7 +62,7 @@ class GameExt(Game):
                 slide == Move.BOTTOM or slide == Move.LEFT or slide == Move.RIGHT
             )
             # if it is at the BOTTOM, it can be moved up, left or right
-            acceptable_bottom: bool = from_pos[0] == 4 and (
+            acceptable_bottom: bool = from_pos[0] == self.n - 1 and (
                 slide == Move.TOP or slide == Move.LEFT or slide == Move.RIGHT
             )
             # if it is on the LEFT, it can be moved up, down or right
@@ -60,7 +70,7 @@ class GameExt(Game):
                 slide == Move.BOTTOM or slide == Move.TOP or slide == Move.RIGHT
             )
             # if it is on the RIGHT, it can be moved up, down or left
-            acceptable_right: bool = from_pos[1] == 4 and (
+            acceptable_right: bool = from_pos[1] == self.n - 1 and (
                 slide == Move.BOTTOM or slide == Move.TOP or slide == Move.LEFT
             )
         # if the piece position is in a corner
@@ -69,13 +79,13 @@ class GameExt(Game):
             acceptable_top: bool = from_pos == (0, 0) and (
                 slide == Move.BOTTOM or slide == Move.RIGHT)
             # if it is in the lower left corner, it can be moved to the right and up
-            acceptable_left: bool = from_pos == (4, 0) and (
+            acceptable_left: bool = from_pos == (self.n - 1, 0) and (
                 slide == Move.TOP or slide == Move.RIGHT)
             # if it is in the upper right corner, it can be moved to the left and down
-            acceptable_right: bool = from_pos == (0, 4) and (
+            acceptable_right: bool = from_pos == (0, self.n - 1) and (
                 slide == Move.BOTTOM or slide == Move.LEFT)
             # if it is in the lower right corner, it can be moved to the left and up
-            acceptable_bottom: bool = from_pos == (4, 4) and (
+            acceptable_bottom: bool = from_pos == (self.n - 1, self.n - 1) and (
                 slide == Move.TOP or slide == Move.LEFT)
         # check if the move is acceptable
         acceptable: bool = acceptable_top or acceptable_bottom or acceptable_left or acceptable_right
