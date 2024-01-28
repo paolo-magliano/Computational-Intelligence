@@ -12,6 +12,7 @@ import torch.nn.functional as F
 
 from constants import *
 from true_game import Player, Game, Move
+from game_ext import GameExt
 from utils import *
 from transformation import *
 
@@ -26,22 +27,178 @@ class RandomPlayer(Player):
         move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
         return from_pos, move
 
-class WinMovePlayer(Player):
+class LastMovePlayer(Player):
     '''Player that makes a winning move if possible, really slow'''
 
-    def __init__(self) -> None:
+    def __init__(self, base_player=RandomPlayer()) -> None:
         super().__init__()
+        self.base_player = base_player
+        self.masks = self.__get_masks()
+        self.last_board = None
+        self.lose_check = False
+    
+    def __get_masks(self) -> list[np.ndarray]:
+        '''Get the masks for each possible move'''
+        masks = {}
+        for i in range(2*N + 2):            
+            for j in range(N):
+                mask = np.zeros((N, N), dtype=np.uint8)
+                if i < N:
+                    mask[i, :j] = 1
+                    mask[i, j + 1:] = 1
+                    masks[self.___mask_hash(mask)] = ((j, i), 'O')
+                elif i < 2*N:
+                    mask[:j, i - N] = 1
+                    mask[j + 1:, i - N] = 1
+                    masks[self.___mask_hash(mask)] = ((i - N, j), 'V')
+                elif i == 2*N:
+                    mask[:j, :j] = np.diag(np.ones(j, dtype=np.uint8))
+                    mask[j + 1:, j + 1:] = np.diag(np.ones(N - j - 1, dtype=np.uint8))
+                    masks[self.___mask_hash(mask)] = ((j, j), 'D')
+                else:
+                    mask[:j, :j] = np.diag(np.ones(j, dtype=np.uint8))
+                    mask[j + 1:, j + 1:] = np.diag(np.ones(N - j - 1, dtype=np.uint8))
+                    mask = np.fliplr(mask)
+                    masks[self.___mask_hash(mask)] = ((N - 1 - j, j), 'D')
 
+        return masks
+    
+    def ___mask_hash(self, mask: np.ndarray) -> int:
+        '''Get the hash of the mask'''
+        return hash(str(mask.flatten()))
+    
+    def __win_get_move(self, board: np.ndarray, player: int, move_pos: (int, int), orientation: str) -> tuple[tuple[int, int], Move]:
+        '''Get the winning move put symbol in move_pos'''
+        for move in [Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT]:
+            if move == Move.TOP and ((move_pos[1] - 1 < 0 and orientation == 'O') or (move_pos[1] - 1 >= 0 and board[move_pos[1] - 1, move_pos[0]] == player)):
+                end = move_pos[1] + 1 if orientation == 'V' else N
+                start = move_pos[1] if move_pos[1] != 0 else move_pos[1] + 1
+                for i in range(start, end):
+                    if (move_pos[0] == 0 or move_pos[0] == N - 1 or i == 0 or i == N - 1) and (board[i, move_pos[0]] == EMPTY or board[i, move_pos[0]] == player):
+                        return (move_pos[0], i), move
+            elif move == Move.BOTTOM and ((move_pos[1] + 1 >= N and orientation == 'O') or (move_pos[1] + 1 < N and board[move_pos[1] + 1, move_pos[0]] == player)):
+                end = move_pos[1] - 1 if orientation == 'V' else -1
+                start = move_pos[1] if move_pos[1] != N - 1 else move_pos[1] - 1
+                for i in range(start, end, -1):
+                    if (move_pos[0] == 0 or move_pos[0] == N - 1 or i == 0 or i == N - 1) and (board[i, move_pos[0]] == EMPTY or board[i, move_pos[0]] == player):
+                        return (move_pos[0], i), move
+            elif move == Move.LEFT and ((move_pos[0] - 1 < 0 and orientation == 'V') or (move_pos[0] - 1 >= 0 and board[move_pos[1], move_pos[0] - 1] == player)):
+                end = move_pos[0] + 1 if orientation == 'O' else N
+                start = move_pos[0] if move_pos[0] != 0 else move_pos[0] + 1
+                for i in range(start, end):
+                    if (move_pos[1] == 0 or move_pos[1] == N - 1 or i == 0 or i == N - 1) and (board[move_pos[1], i] == EMPTY or board[move_pos[1], i] == player):
+                        return (i, move_pos[1]), move
+            elif move == Move.RIGHT and ((move_pos[0] + 1 >= N and orientation == 'V') or (move_pos[0] + 1 < N and board[move_pos[1], move_pos[0] + 1] == player)):
+                end = move_pos[0] - 1 if orientation == 'O' else -1
+                start = move_pos[0] if move_pos[0] != N - 1 else move_pos[0] - 1
+                for i in range(start, end, -1):
+                    if (move_pos[1] == 0 or move_pos[1] == N - 1 or i == 0 or i == N - 1) and (board[move_pos[1], i] == EMPTY or board[move_pos[1], i] == player):
+                        return (i, move_pos[1]), move
+        return None 
+    
+    def __check_lose_move(self, game: 'GameExt', move: ((int, int), Move)) -> bool:
+        test_game = deepcopy(game)
+        ok = test_game.move(move[0], move[1], game.get_current_player())
+        if not ok:
+            return False
+        if test_game.check_winner() == game.get_current_player():
+            return True
+        elif test_game.check_winner() == 1 - game.get_current_player():
+            return False
+        test_game.set_current_player(1 - game.get_current_player())
+
+        board  = test_game.get_board()
+        player = test_game.get_current_player()   
+        win_masks = self.__mask_board(board, player)
+        for win_mask in win_masks:
+            hash_win_mask = self.___mask_hash(win_mask)
+            if hash_win_mask in self.masks:
+                move_pos, orientation = self.masks[hash_win_mask]
+                move = self.__win_get_move(board, player, move_pos, orientation)
+                if move:
+                    return False
+                
+        return True
+
+
+    def __mask_board(self, board: np.ndarray, player: int) -> np.ndarray:
+        '''Mask the board with the player'''
+        mask = np.zeros((N, N), dtype=np.uint8)
+        mask_list = []
+        for i in range(2*N + 2):
+            'Check if there are N - 1 piace in the row, column or diagonal'
+            if i < N:
+                if np.count_nonzero(board[i, :] == player) == N - 1:
+                    mask[i, :] = board[i, :] == player
+                    mask_list.append(deepcopy(mask))
+                    mask = np.zeros((N, N), dtype=np.uint8)
+            elif i < 2*N:
+                if np.count_nonzero(board[:, i - N] == player) == N - 1:
+                    mask[:, i - N] = board[:, i - N] == player
+                    mask_list.append(deepcopy(mask))
+                    mask = np.zeros((N, N), dtype=np.uint8)
+            elif i == 2*N:
+                if np.count_nonzero(np.diag(board) == player) == N - 1:
+                    mask[np.diag_indices(N)] = np.diag(board) == player
+                    mask_list.append(deepcopy(mask))
+                    mask = np.zeros((N, N), dtype=np.uint8)
+            else:
+                if np.count_nonzero(np.diag(np.fliplr(board)) == player) == N - 1:
+                    rot_mask = np.fliplr(mask)
+                    rot_mask[np.diag_indices(N)] = np.diag(np.fliplr(board)) == player
+                    mask = np.fliplr(rot_mask)
+                    mask_list.append(deepcopy(mask))
+                    mask = np.zeros((N, N), dtype=np.uint8)
+
+
+        return mask_list
+                
     def make_move(self, game: 'Game') -> tuple[tuple[int, int], Move]:
-        player = X if len([1 for cell in game.get_board() if cell != EMPTY]) % 2 == 0 else O
-        for i in range(ACTION_SPACE):
-            from_pos, move = get_move_from_index(i)
-            next_state = deepcopy(game)
-            ok = next_state.move(from_pos, move, player)
-            if ok and next_state.check_winner() == player:
-                return from_pos, move
-        
-        return RandomPlayer().make_move(game)
+        '''Make the winning move or the not losing move if possible'''
+        board = game.get_board()
+        equal = self.last_board is not None and np.array_equal(self.last_board, board)
+        player = game.get_current_player()
+        win_masks = self.__mask_board(board, player)
+        lose_masks = self.__mask_board(board, 1 - player)
+        if not equal:
+            self.last_board = deepcopy(board)
+            self.lose_check = False
+
+        if not equal:         
+            for win_mask in win_masks:
+                hash_win_mask = self.___mask_hash(win_mask)
+                if hash_win_mask in self.masks:
+                    move_pos, orientation = self.masks[hash_win_mask]
+                    move = self.__win_get_move(board, player, move_pos, orientation)
+                    if move:
+                        return move
+                
+        hash_bools = [(self.___mask_hash(lm) in self.masks) for lm in lose_masks]
+    
+        if any(hash_bools) and not (equal and self.lose_check):
+            possible_moves = ACTION_SPACE if type(self.base_player) == DQNPlayer else 4*N*N
+            for i in range(possible_moves):
+                move = self.base_player.make_move(game)
+                #print(f'Base move: {i}/{ACTION_SPACE} - {move}')
+
+                if type(game) != GameExt:
+                    print(f'WARINING: Lose check is not working for Game, only for GameExt')
+                    return move
+                
+                ok = self.__check_lose_move(game, move)
+                if ok:
+                    return move
+            self.lose_check = True
+            if type(self.base_player) == DQNPlayer:
+                self.base_player.invalid_moves = []
+
+        move = self.base_player.make_move(game)
+        return move
+    
+    def update(self, states: list['Game'], actions: list[tuple[tuple[int, int], Move]], rewards: list[float]) -> None:
+        if type(self.base_player) == DQNPlayer:
+            self.base_player.update(states, actions, rewards)
+    
 
 class HumanPlayer(Player):
     '''Player that asks the user for the move'''
@@ -156,6 +313,8 @@ class DQNPlayer(Player):
                 from_pos, move = transform_move(norm_from_pos, norm_move, get_move_transformations(get_inverse_transformation(transformations))) if TRANSFORMATION else (norm_from_pos, norm_move)
                 if self.invalid_game and np.array_equal(self.invalid_game.get_board(), game.get_board()) and (from_pos, move) in self.invalid_moves:
                     k += 1
+                    if k == ACTION_SPACE - 1:
+                        self.invalid_moves = []
                 else:
                     ok = True
 

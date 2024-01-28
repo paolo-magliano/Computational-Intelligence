@@ -50,22 +50,37 @@ if __name__ == '__main__':
 
     '''Select the player for the agent'''
     if MODE == 'train':
-        player = DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1))
+        player = LastMovePlayer(DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1)))
     else:
-        player = DQNPlayer(mode=MODE)
+        player = LastMovePlayer(DQNPlayer(mode=MODE))
 
     '''Select all the players for the environment, also the DQNPlayer can be used'''
     env_player = [RandomPlayer()] + [DQNPlayer(mode='test', path=p) for p in LOAD_PATHS[LOAD]]
     
-
     print(f'Agent player: ')
-    print(f'\tDQN player {player.path}')
+    if type(player) == DQNPlayer:
+        print(f'\tDQN player {player.path}')
+    elif type(player) == LastMovePlayer:
+        print (f'\tLastMove player -> ', end='')
+        if type(player.base_player) == DQNPlayer:
+            print(f'DQN player {player.base_player.path}')
+        else:
+            print(f'Random player')
+    else:
+        print(f'\tRandom player')
     print(f'Enviroment players: ')
     for p in env_player:
-        if type(p) == RandomPlayer:
-            print(f'\tRandom player')
+        if type(p) == DQNPlayer:
+            print(f'\tDQN player {p.path}')   
+        elif type(p) == LastMovePlayer:
+            print (f'\tLastMove player -> ', end='')
+            if type(p.base_player) == DQNPlayer:
+                print(f'DQN player {p.base_player.path}')
+            else:
+                print(f'Random player')
         else:
-            print(f'\tDQN player {p.path}')
+            print(f'\tRandom player')
+            
 
     start = time.time()
     for i in range(iterations):

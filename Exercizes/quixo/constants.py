@@ -3,8 +3,8 @@ from enum import Enum
 
 MODE = 'train'           # 'train' or 'test' 
 N = 5                   # Board size
-VERSION = 2             # Version of the model to use
-ITERATIONS = 1_000_000  # Number of iterations to train
+VERSION = 0             # Version of the model to use
+ITERATIONS = 50_000  # Number of iterations to train
 TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network

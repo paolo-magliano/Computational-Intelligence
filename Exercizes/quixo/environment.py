@@ -23,6 +23,7 @@ class Environment(object):
         self.game = GameExt()
         if self.mode == 'random':
             self.env_player_id = random.choice([X, O])
+        self.game.set_current_player(X)
         
         '''The case where the environment player is the first to move'''
         if self.env_player_id == X:
@@ -30,6 +31,7 @@ class Environment(object):
             while not ok:
                 from_pos, slide = self.env_player.make_move(self.game)
                 ok = self.game.move(from_pos, slide, self.env_player_id)
+            self.game.set_current_player(O)
 
         return deepcopy(self.game), False
 
@@ -50,6 +52,7 @@ class Environment(object):
         winner = self.game.check_winner()
         if winner != EMPTY:
             return deepcopy(self.game), LOSE_REWARD if winner == self.env_player_id else WIN_REWARD, True
+        self.game.set_current_player(self.env_player_id)
         
         '''Environment move'''
         ok = False
@@ -62,5 +65,6 @@ class Environment(object):
         '''Check if the game is over'''
         if winner != EMPTY:
             return deepcopy(self.game), LOSE_REWARD if winner == self.env_player_id else WIN_REWARD, True
+        self.game.set_current_player(X + O - self.env_player_id)
         
         return deepcopy(self.game), MOVE_REWARD, False
