@@ -56,6 +56,8 @@ if __name__ == '__main__':
 
     '''Select all the players for the environment, also the DQNPlayer can be used'''
     env_player = [RandomPlayer()] + [DQNPlayer(mode='test', path=p) for p in LOAD_PATHS[LOAD]]
+    for path in LOAD_PATHS[LOAD]:
+        print(path)
     
     print(f'Agent player: ')
     if type(player) == DQNPlayer:
@@ -88,7 +90,7 @@ if __name__ == '__main__':
         env = Environment(random.choice(env_player))
 
         '''Play a game'''
-        rewards = game(env, player)
+        rewards = game(env, player, True)
 
         '''Print and update the win rate'''
         if rewards[-1] == WIN_REWARD:

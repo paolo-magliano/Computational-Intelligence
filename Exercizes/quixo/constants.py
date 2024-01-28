@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-MODE = 'train'           # 'train' or 'test' 
+MODE = 'test'           # 'train' or 'test' 
 N = 5                   # Board size
 VERSION = 0             # Version of the model to use
 ITERATIONS = 50_000  # Number of iterations to train
@@ -9,7 +9,7 @@ TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network
 INVALID_MOVES = False     # Allow invalid moves during the training, so the agent lose if it makes an invalid move
-LOAD = 'simple'         # 'simple' or 'mix' select the model to load for the environment
+LOAD = 'mix'         # 'simple' or 'mix' select the model to load for the environment
 
 '''Number of possible actions'''
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_SPACE else 4 * (N - 1) * 4 - 4*N 
@@ -33,7 +33,7 @@ LOSE_REWARD = 0
 DRAW_REWARD = 0
 
 '''Values for the DQN player'''
-MLP_0_HIDDEN_SIZE = 0
+MLP_0_HIDDEN_SIZE = 1024
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
 
@@ -56,8 +56,8 @@ def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=I
 MODEL_NAME = path()
 LOAD_PATHS = {
     'simple': [path(version=v) for v in range(VERSION)],
-    'all': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0) for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
-    'mix': [
+    'mix': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0, load='simple') for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
+    'cust': [
         f'{PATH}model_5_v0_100K_IM.pth',
         f'{PATH}model_5_v0_100K.pth',
         f'{PATH}model_5_v0_1000K_IM.pth',
