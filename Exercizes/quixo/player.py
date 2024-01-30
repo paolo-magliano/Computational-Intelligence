@@ -96,8 +96,8 @@ class LastMovePlayer(Player):
                         return (i, move_pos[1]), move
         return None 
     
-    def __check_lose_move(self, game: 'GameExt', move: ((int, int), Move)) -> bool:
-        test_game = deepcopy(game)
+    def __check_lose_move(self, game: 'Game', move: ((int, int), Move)) -> bool:
+        test_game = GameExt(board=game.get_board(), n=N)
         ok = test_game.move(move[0], move[1], game.get_current_player())
         if not ok:
             return False
@@ -119,7 +119,6 @@ class LastMovePlayer(Player):
                     return False
                 
         return True
-
 
     def __mask_board(self, board: np.ndarray, player: int) -> np.ndarray:
         '''Mask the board with the player'''
@@ -179,11 +178,6 @@ class LastMovePlayer(Player):
             possible_moves = ACTION_SPACE if type(self.base_player) == DQNPlayer else 4*N*N
             for i in range(possible_moves):
                 move = self.base_player.make_move(game)
-                #print(f'Base move: {i}/{ACTION_SPACE} - {move}')
-
-                if type(game) != GameExt:
-                    print(f'WARINING: Lose check is not working for Game, only for GameExt')
-                    return move
                 
                 ok = self.__check_lose_move(game, move)
                 if ok:
@@ -286,7 +280,7 @@ class DQNPlayer(Player):
                 action_index = random.choices(range(ACTION_SPACE), weights=actions_score.tolist())[0]
                 norm_from_pos, norm_move = get_move_from_index(action_index)
                 # print(f'Norm from pos: {norm_from_pos}, norm move: {norm_move}')
-                # print(f' Inverse')
+                # print(f'Inverse')
                 from_pos, move = transform_move(norm_from_pos, norm_move, get_move_transformations(get_inverse_transformation(transformations))) if TRANSFORMATION else (norm_from_pos, norm_move)
                 if self.invalid_game and np.array_equal(self.invalid_game.get_board(), game.get_board()) and (from_pos, move) in self.invalid_moves:
                     ok = False

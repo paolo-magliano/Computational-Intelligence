@@ -1,7 +1,6 @@
 import random
 from true_game import Game, Move, Player
 from player import DQNPlayer, LastMovePlayer
-from game_ext import GameExt
 
 class RandomPlayer(Player):
     def __init__(self) -> None:
@@ -26,7 +25,7 @@ class MyPlayer(Player):
 if __name__ == '__main__':
     sum = 0
     print("Testing...")
-    player1 = LastMovePlayer(DQNPlayer(mode='test', path='models/model_5_v0_1000K_MIX.pth'))
+    player1 = LastMovePlayer()
     player0 = LastMovePlayer()
     for i in range(1000):
         g = GameExt()
