@@ -50,12 +50,13 @@ if __name__ == '__main__':
 
     '''Select the player for the agent'''
     if MODE == 'train':
-        player = LastMovePlayer(DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1)))
+        player = LastMovePlayer(DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1))) if LAST_MOVE else DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1))
     else:
-        player = LastMovePlayer(DQNPlayer(mode=MODE))
+        player = LastMovePlayer(DQNPlayer(mode=MODE)) if LAST_MOVE else DQNPlayer(mode=MODE)
 
     '''Select all the players for the environment, also the DQNPlayer can be used'''
-    env_player = [RandomPlayer()] + [DQNPlayer(mode='test', path=p) for p in LOAD_PATHS[LOAD]]
+    env_player = [LastMovePlayer()] if LAST_MOVE else [RandomPlayer()]
+    env_player += [LastMovePlayer(DQNPlayer(mode='test', path=p)) if LAST_MOVE else DQNPlayer(mode='test', path=p) for p in LOAD_PATHS[LOAD]] 
     for path in LOAD_PATHS[LOAD]:
         print(path)
     
@@ -90,7 +91,7 @@ if __name__ == '__main__':
         env = Environment(random.choice(env_player))
 
         '''Play a game'''
-        rewards = game(env, player, True)
+        rewards = game(env, player)
 
         '''Print and update the win rate'''
         if rewards[-1] == WIN_REWARD:
@@ -105,4 +106,5 @@ if __name__ == '__main__':
     
     '''Save the trained model'''
     if MODE == 'train':
-        torch.save(player.target_net.state_dict(), MODEL_NAME)
+        net = player.base_player.target_net.state_dict() if type(player) == LastMovePlayer else player.target_net.state_dict()
+        torch.save(net, MODEL_NAME)

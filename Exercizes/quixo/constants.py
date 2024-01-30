@@ -1,14 +1,15 @@
 from enum import Enum
 
 
-MODE = 'test'           # 'train' or 'test' 
+MODE = 'train'           # 'train' or 'test' 
 N = 5                   # Board size
 VERSION = 0             # Version of the model to use
-ITERATIONS = 50_000  # Number of iterations to train
+ITERATIONS = 800_000  # Number of iterations to train
 TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network
 INVALID_MOVES = False     # Allow invalid moves during the training, so the agent lose if it makes an invalid move
+LAST_MOVE = True       # Use the LastMovePlayer 
 LOAD = 'mix'         # 'simple' or 'mix' select the model to load for the environment
 
 '''Number of possible actions'''
@@ -33,7 +34,7 @@ LOSE_REWARD = 0
 DRAW_REWARD = 0
 
 '''Values for the DQN player'''
-MLP_0_HIDDEN_SIZE = 1024
+MLP_0_HIDDEN_SIZE = 0
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
 
@@ -48,15 +49,15 @@ EPSILON_B = 1000 // BATCH_SIZE
 '''Values for load and save'''
 PATH = './models/'
 
-def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=INVALID_SPACE, invalid_moves=INVALID_MOVES, transformation=TRANSFORMATION, load=LOAD, mlp_0_size=MLP_0_HIDDEN_SIZE) -> str:
+def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=INVALID_SPACE, invalid_moves=INVALID_MOVES, transformation=TRANSFORMATION, last_move=LAST_MOVE, load=LOAD, mlp_0_size=MLP_0_HIDDEN_SIZE) -> str:
     '''Returns the path of the model to use'''
 
-    return f'{path}model_{n}_v{version}_{iterations // 1000}K{"_IS" if invalid_space else ""}{"_IM" if invalid_moves else ""}{"_T" if transformation else ""}{f"_{load.upper()}" if load != "simple" else ""}{f"_{mlp_0_size}S" if mlp_0_size != 0 else ""}.pth'
+    return f'{path}model_{n}_v{version}_{iterations // 1000}K{"_IS" if invalid_space else ""}{"_IM" if invalid_moves else ""}{"_T" if transformation else ""}{"_LM" if last_move else ""}{f"_{load.upper()}" if load != "simple" else ""}{f"_{mlp_0_size}S" if mlp_0_size != 0 else ""}.pth'
 
 MODEL_NAME = path()
 LOAD_PATHS = {
     'simple': [path(version=v) for v in range(VERSION)],
-    'mix': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0, load='simple') for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
+    'mix': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0, load='simple', last_move=False) for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
     'cust': [
         f'{PATH}model_5_v0_100K_IM.pth',
         f'{PATH}model_5_v0_100K.pth',
