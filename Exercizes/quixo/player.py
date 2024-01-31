@@ -250,7 +250,6 @@ class DQNPlayer(Player):
 
         '''Attributes about the network'''
 
-
         if (self.mode == 'test' or load) and os.path.exists(path):
             mlp_0_size = int(re.search(r'_(\d+)S', path).group(1)) if re.search(r'_(\d+)S', path) else 0
             self.policy_net = DQN(mlp_0_size=mlp_0_size)
@@ -314,7 +313,8 @@ class DQNPlayer(Player):
                 from_pos, move = transform_move(norm_from_pos, norm_move, get_move_transformations(get_inverse_transformation(transformations))) if TRANSFORMATION else (norm_from_pos, norm_move)
                 if self.invalid_game and np.array_equal(self.invalid_game.get_board(), game.get_board()) and (from_pos, move) in self.invalid_moves:
                     k += 1
-                    if k == ACTION_SPACE - 1:
+                    if k >= ACTION_SPACE - 1:
+                        k = 0
                         self.invalid_moves = []
                 else:
                     ok = True

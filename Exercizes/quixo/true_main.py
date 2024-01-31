@@ -28,7 +28,7 @@ if __name__ == '__main__':
     player1 = LastMovePlayer()
     player0 = LastMovePlayer()
     for i in range(1000):
-        g = Game()
+        g = GameExt()
         # g.print()
         winner = g.play(player0, player1)
         sum = sum + winner

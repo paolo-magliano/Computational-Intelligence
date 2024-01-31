@@ -16,11 +16,13 @@ class Environment(object):
         self.env_player = env_player
         self.env_player_id = env_player_id if env_player_id else random.choice([X, O])
 
+        self.turns = 0
         self.mode = 'fixed' if env_player_id else 'random'
 
     def reset(self) -> tuple[Game, int, bool]:
         '''Returns the initial state, the reward and if the game is over'''
         self.game = GameExt()
+        self.turns = 0
         if self.mode == 'random':
             self.env_player_id = random.choice([X, O])
         self.game.set_current_player(X)
@@ -37,7 +39,9 @@ class Environment(object):
 
     def step(self, action: tuple[tuple[int, int], Move]) -> tuple[Game, int, bool]:
         '''Returns the next state, the reward and if the game is over'''
-
+        self.turns += 1
+        if self.turns == 200:
+            return deepcopy(self.game), DRAW_REWARD, True
         '''Agent move'''
         from_pos, slide = action
 
