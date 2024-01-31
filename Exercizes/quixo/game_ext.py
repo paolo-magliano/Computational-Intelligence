@@ -1,8 +1,9 @@
-from true_game import *
+from game import *
 from constants import *
 from utils import *
 
 class GameExt(Game):
+    '''Similar to the Game class with public methods and different print'''
     def __init__(self, board=None, n=N) -> None:
         super().__init__()
         self._board = board if board is not None else np.ones((n, n), dtype=np.uint8) * -1
