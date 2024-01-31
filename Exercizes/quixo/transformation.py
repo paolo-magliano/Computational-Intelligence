@@ -2,7 +2,7 @@ import torch
 from typing import Union, Callable
 
 from constants import *
-from true_game import Move
+from game import Move
 
 def transform_board(board: torch.Tensor, transformations: list[(Callable, Union[int, tuple])]) -> torch.Tensor:
     '''Returns the transformed board after applying the given transformations'''

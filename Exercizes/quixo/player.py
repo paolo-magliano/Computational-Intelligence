@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from constants import *
-from true_game import Player, Game, Move
+from game import Player, Game, Move
 from game_ext import GameExt
 from utils import *
 from transformation import *
@@ -38,7 +38,7 @@ class LastMovePlayer(Player):
         self.lose_check = False
     
     def __get_masks(self) -> list[np.ndarray]:
-        '''Get the masks for each possible move'''
+        '''Get the masks for each possible semi-terminal board: 4 simbols in a row, column or diagonal'''
         masks = {}
         for i in range(2*N + 2):            
             for j in range(N):
@@ -68,7 +68,7 @@ class LastMovePlayer(Player):
         return hash(str(mask.flatten()))
     
     def __win_get_move(self, board: np.ndarray, player: int, move_pos: (int, int), orientation: str) -> tuple[tuple[int, int], Move]:
-        '''Get the winning move put symbol in move_pos'''
+        '''Get the winning move if possible'''
         for move in [Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT]:
             if move == Move.TOP and ((move_pos[1] - 1 < 0 and orientation == 'O') or (move_pos[1] - 1 >= 0 and board[move_pos[1] - 1, move_pos[0]] == player)):
                 end = move_pos[1] + 1 if orientation == 'V' else N
@@ -97,7 +97,11 @@ class LastMovePlayer(Player):
         return None 
     
     def __check_lose_move(self, game: 'Game', move: ((int, int), Move)) -> bool:
+        '''Check if the move is a losing move'''
+
         test_game = GameExt(board=game.get_board(), n=N)
+
+        '''Play the move'''
         ok = test_game.move(move[0], move[1], game.get_current_player())
         if not ok:
             return False
@@ -107,6 +111,7 @@ class LastMovePlayer(Player):
             return False
         test_game.set_current_player(1 - game.get_current_player())
 
+        '''Check if the opponent can win in the next move'''
         board  = test_game.get_board()
         player = test_game.get_current_player()   
         win_masks = self.__mask_board(board, player)
@@ -163,6 +168,7 @@ class LastMovePlayer(Player):
             self.last_board = deepcopy(board)
             self.lose_check = False
 
+        '''Check if there is a winning move'''
         if not equal:         
             for win_mask in win_masks:
                 hash_win_mask = self.___mask_hash(win_mask)
@@ -174,6 +180,7 @@ class LastMovePlayer(Player):
                 
         hash_bools = [(self.___mask_hash(lm) in self.masks) for lm in lose_masks]
     
+        '''Check if there is a not losing move'''
         if any(hash_bools) and not (equal and self.lose_check):
             possible_moves = ACTION_SPACE if type(self.base_player) == DQNPlayer else 4*N*N
             for i in range(possible_moves):
@@ -190,9 +197,9 @@ class LastMovePlayer(Player):
         return move
     
     def update(self, states: list['Game'], actions: list[tuple[tuple[int, int], Move]], rewards: list[float]) -> None:
+        '''Update the base player if it is a DQNPlayer'''
         if type(self.base_player) == DQNPlayer:
             self.base_player.update(states, actions, rewards)
-    
 
 class HumanPlayer(Player):
     '''Player that asks the user for the move'''

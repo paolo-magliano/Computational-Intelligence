@@ -1,5 +1,5 @@
 import random
-from true_game import Game, Move, Player
+from game import Game, Move, Player
 from player import DQNPlayer, LastMovePlayer
 
 class RandomPlayer(Player):

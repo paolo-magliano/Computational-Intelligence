@@ -1,5 +1,5 @@
 from constants import *
-from true_game import Move
+from game import Move
 
 def get_move_from_index(index: int) -> tuple[tuple[int, int], Move]:
     '''Returns the move corresponding to the given index'''
