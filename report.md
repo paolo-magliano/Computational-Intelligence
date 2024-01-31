@@ -6,49 +6,44 @@
   - [Set covering A\* - Lab 1](#set-covering-a---lab-1)
     - [Description](#description)
     - [Code](#code)
-      - [Import](#import)
-      - [Variables](#variables)
-      - [Cost functions](#cost-functions)
-      - [Search function](#search-function)
-      - [Main](#main)
   - [Nim - Lab 2](#nim---lab-2)
     - [Description](#description-1)
-    - [Code](#code-1)
-      - [Import](#import-1)
-      - [Nim class](#nim-class)
-      - [Random strategy](#random-strategy)
-      - [Gabriel strategy](#gabriel-strategy)
-      - [Nim sum stretegy](#nim-sum-stretegy)
-      - [Human strategy](#human-strategy)
-      - [Adaptive strategy](#adaptive-strategy)
-        - [The genotype](#the-genotype)
-          - [Example:](#example)
-        - [The fitness function](#the-fitness-function)
-      - [Match function](#match-function)
-      - [Main](#main-1)
+      - [Human strategy code](#human-strategy-code)
+    - [Adaptive strategy](#adaptive-strategy)
+        - [Example:](#example)
+      - [Adaptive strategy code](#adaptive-strategy-code)
+    - [Match code](#match-code)
+    - [Results](#results)
     - [Review](#review)
       - [Review to Vincenzo Micciche'](#review-to-vincenzo-micciche)
       - [Review to Gabriele Ferro](#review-to-gabriele-ferro)
   - [Black box - Lab 9](#black-box---lab-9)
     - [Description](#description-2)
-    - [Code](#code-2)
-      - [Import](#import-2)
-      - [Individual class](#individual-class)
-      - [Hill climbing](#hill-climbing)
-      - [Genetic algorithm](#genetic-algorithm)
-      - [Genetic algorithm with isolation](#genetic-algorithm-with-isolation)
-      - [Main](#main-2)
+    - [Hill climbing](#hill-climbing)
+      - [Hill climbing code](#hill-climbing-code)
+    - [Genetic algorithm](#genetic-algorithm)
+      - [Genetic algorithm code](#genetic-algorithm-code)
+    - [Genetic algorithm with isolation](#genetic-algorithm-with-isolation)
+      - [Genetic algorithm with isolation code](#genetic-algorithm-with-isolation-code)
+    - [Main code](#main-code)
+    - [Results](#results-1)
+        - [Problem 1](#problem-1)
+        - [Problem 2](#problem-2)
+        - [Problem 5](#problem-5)
+        - [Problem 10](#problem-10)
     - [Review](#review-1)
       - [Review to Luca Barbato](#review-to-luca-barbato)
       - [Review to Andrea Galella](#review-to-andrea-galella)
   - [Tic tac toe - Lab 10](#tic-tac-toe---lab-10)
     - [Description](#description-3)
-    - [Code](#code-3)
-      - [Import](#import-3)
-      - [TicTacToe class](#tictactoe-class)
-      - [Environment](#environment)
-      - [Agent](#agent)
-      - [RL algorithm](#rl-algorithm)
+    - [TicTacToe class](#tictactoe-class)
+      - [TicTacToe code](#tictactoe-code)
+    - [Environment](#environment)
+      - [Environment code](#environment-code)
+    - [Agent](#agent)
+      - [Agent code](#agent-code)
+    - [RL algorithm](#rl-algorithm)
+      - [RL algorithm code](#rl-algorithm-code)
     - [Review](#review-2)
       - [Review to Michelangelo Caretto](#review-to-michelangelo-caretto)
       - [Review to Luca Pastore](#review-to-luca-pastore)
@@ -62,9 +57,11 @@
       - [Game batch](#game-batch)
       - [Invalid moves](#invalid-moves)
       - [Board normalization](#board-normalization)
+        - [Board normalization code](#board-normalization-code)
       - [DQN player code](#dqn-player-code)
     - [Environment](#environment-1)
-      - [Environment code](#environment-code)
+      - [Environment code](#environment-code-1)
+        - [GameExt code](#gameext-code)
     - [Last move player](#last-move-player)
       - [Masks](#masks)
       - [Role](#role)
@@ -74,28 +71,22 @@
       - [Training code](#training-code)
         - [Constants](#constants)
         - [Training functions](#training-functions)
-    - [Extra - Human player](#extra---human-player)
+    - [Results](#results-2)
+      - [Usage](#usage)
 
 <div style="page-break-after: always;"></div>
 
 ## Set covering A* - Lab 1
 ### Description
+The problem is to find the minimum number of sets that covers all the elements of the problem. The problem is solved using A* algorithm with different heuristic functions.
+
+The heuristic functions return an optimistic estimate of the number of sets that are needed to cover all the elements of the problem set:
+ - h1: it returns the number of sets needed to cover the missing part as where all sets have the size of the largest sets available.
+ - h2: it returns the number of sets needed to cover the missing part as where all sets have the size of the largest sets available minus the number of elements already covered.
+ - h3: it returns the number of sets needed to cover the missing part as where each set have the size according to the descending order of the size of the available sets minus the number of elements already covered.
+ - h4: it returns the number of sets needed to cover the missing part as where each set have the size according to the descending order of the size of the available sets minus the number of elements already covered, but the order is recalculated after each set is selected.
 
 ### Code
-
-#### Import
-
-```python
-import numpy as np
-import random as rd
-from math import ceil
-from functools import reduce
-from queue import SimpleQueue, PriorityQueue
-from collections import namedtuple
-import time
-```
-
-#### Variables
 
 ```python
 PROBLEM_SIZE = 30
@@ -103,11 +94,7 @@ NUM_SETS = 50
 SETS = tuple([np.array([rd.random() < 0.15 for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
 
 initial_state = (set(), set(range(NUM_SETS)))
-```
 
-#### Cost functions
-
-```python
 def covered(state):
     return reduce(np.logical_or, [SETS[i] for i in state[0]], np.array([False for _ in range(PROBLEM_SIZE)]))
 
@@ -178,101 +165,15 @@ def breath_cost(state):
     return len(state[0])
 ```
 
-#### Search function
-
-```python
-def search(initial_state, cost_function):
-    print(cost_function.__name__)
-    frontier = PriorityQueue()
-    state = initial_state
-    counter = 0
-    if(not goal_check((state[1], state[0]))):
-        print("\tNo solution found")
-    else:
-        start = time.time()
-        while state[1] and not goal_check(state):
-            counter += 1
-            for action in state[1]:
-                if action not in state[0]:
-                    new_state = (state[0] ^ {action}, state[1] ^ {action})
-                    frontier.put((cost_function(new_state), new_state))
-            _, state = frontier.get()
-        end = time.time()
-
-        print("\tSolution:", state[0], _)
-        print("\tSteps: ", counter)
-        print(f'\tTime for step: {((end - start)/counter):.2e}')
-```
-
-#### Main
-    
-```python
-for cost_fun in [gready_cost, A_cost3, A_cost4]:
-    search(initial_state, cost_fun)
-```
+<div style="page-break-after: always;"></div>
 
 ## Nim - Lab 2
+
 ### Description
-### Code
+The Nim game is a simple game where two players take turns removing objects from a set of objects, the player that removes the last object wins the game. 
 
-#### Import
-    
-```python
-import logging
-from itertools import product
-from pprint import pprint, pformat
-from collections import namedtuple
-import random
-from copy import deepcopy
-import numpy as np
-import time
-```
+The implemented strategy wants to archvie the result of the optimal strategy without know any additional information about the game apart from the basic rules. The strategy assumes that there is always a winning move for each state of the game and it tries to find it.
 
-#### Nim class
-
-```python
-Nimply = namedtuple("Nimply", "row, num_objects")
-
-class Nim:
-    def __init__(self, num_rows: int) -> None:
-        self._rows = [i * 2 + 1 for i in range(num_rows)]
-
-    def __bool__(self):
-        return sum(self._rows) > 0
-
-    def __str__(self):
-        return "<" + " ".join(str(_) for _ in self._rows) + ">"
-
-    @property
-    def rows(self) -> tuple:
-        return tuple(self._rows)
-
-    def nimming(self, ply: Nimply) -> None:
-        row, num_objects = ply
-        assert self._rows[row] >= num_objects
-        self._rows[row] -= num_objects
-```
-
-#### Random strategy
-
-```python
-def pure_random(state: Nim) -> Nimply:
-    """A completely random move"""
-    row = random.choice([r for r, c in enumerate(state.rows) if c > 0])
-    num_objects = random.randint(1, state.rows[row])
-    return Nimply(row, num_objects)
-```
-
-#### Gabriel strategy
-
-```python
-def gabriele(state: Nim) -> Nimply:
-    """Pick always the maximum possible number of the lowest row"""
-    possible_moves = [(r, o) for r, c in enumerate(state.rows) for o in range(1, c + 1)]
-    return Nimply(*max(possible_moves, key=lambda m: (-m[0], m[1])))
-```
-
-#### Nim sum stretegy
 
 ```python
 def nim_sum(state: Nim) -> int:
@@ -308,7 +209,8 @@ def spicy(state: Nim) -> Nimply:
     return ply
 ```
 
-#### Human strategy
+#### Human strategy code
+The human strategy is used to play against the computer, it asks the user to insert the row and the number of objects to remove and then it returns the move.
 
 ```python
 def me(state: Nim) -> Nimply:
@@ -317,25 +219,40 @@ def me(state: Nim) -> Nimply:
     return Nimply(int(row) -1, int(num_objects))
 ```
 
-#### Adaptive strategy
+### Adaptive strategy
+The adaptive strategy keeps track of the moves that he does to win or lose the game, and then it changes the moves that has produced a loss and keeps the moves that has produced a win. This idea is based on the fact that for each state of the game there is a winning move. After each game a new individual is generated from the combinations of the existing individuals.
 
-##### The genotype
-The adaptive strategy genotype is based on a multidimensional array that rappresents all the possbile states of the game, where each dimension rapresents a row of the game. In each cell of the array there is the next move that the strategy will do in that state.
+The genotype is based on a multidimensional array that rappresents all the possbile states of the game, where each dimension rapresents a row of the game. In each cell of the array there is the next move that the strategy will do in that state.
 
-###### Example:
+##### Example:
 `GAME_SIZE = 2`: A Game with 2 rows, one with 1 elements and one with 3 elements
 The array is a 2x4 matrix where the first dimension rappresent the first row that can have from 0 up to 1 elements, and the second dimension rappresent the second row that can have from 0 up to 3 elements.
 
 One possibile istance of the moves array is:
 
-|             None             | Nimply(row=1, num_objects=1) | Nimply(row=1, num_objects=2) | Nimply(row=1, num_objects=3) |
-| :--------------------------: | :--------------------------: | :--------------------------: | :--------------------------: |
-| Nimply(row=0, num_objects=1) | Nimply(row=1, num_objects=1) | Nimply(row=1, num_objects=1) | Nimply(row=0, num_objects=1) |
+<table>
+  <tr>
+    <td>None</td>
+    <td>Nimply(row=1, num_objects=1)</td>
+    <td>Nimply(row=1, num_objects=2)</td>
+    <td>Nimply(row=1, num_objects=3)</td>
+  </tr>
+  <tr>
+    <td>Nimply(row=0, num_objects=1)</td>
+    <td>Nimply(row=1, num_objects=1)</td>
+    <td>Nimply(row=1, num_objects=1)</td>
+    <td>Nimply(row=0, num_objects=1)</td>
+  </tr>
+</table>
 
 In this case the move that the strategy will do in the state (1, 3) is the cell `moves[1][3]` and it is `Nimply(row=0, num_objects=1)`. The next state after this move will be (0, 3), the other player do his move and then the adaptive strategy gives its next move based on the new state in the same way.
 
-##### The fitness function
 The fitness function is really simple and it is 1 if the strategy wins the game and 0 if it loses the game.
+
+The mutation is done by changing randomly one loosing move of the strategy.
+The crossover is done by combining the winning moves of the two strategies.
+
+#### Adaptive strategy code
 
 ```python
 class Adaptive:
@@ -450,7 +367,7 @@ class Adaptive:
         np.save(f"{self.name}_adaptive_{self.dim}.npy", self.moves)
 ```
 
-#### Match function
+### Match code
 
 ```python
 def match(nim: Nim, strategies: dict, start: bool = 0, verbose: bool = True) -> bool:
@@ -467,11 +384,7 @@ def match(nim: Nim, strategies: dict, start: bool = 0, verbose: bool = True) -> 
             print(f"\tstatus: {nim}")
 
     return player
-```
 
-#### Main
-
-```python
 GAME_SIZE = 6
 N_EPOCH = 2000
 N_POPULATION = 300
@@ -506,6 +419,9 @@ final_apt2 = Adaptive.get_candidates(apt_strategies2, n_sample=1).popitem()[0]
 final_apt.save()
 final_apt2.save()
 ```
+
+### Results
+The adaptive strategy coverge to the optimal one after thousands of epochs with dimension up to 5, so it is able to understand which is the best move for each state of the game without using nim sum calculation. Increasing the dimension the time to converge and the dimension of the array increase too much for converge in a reasonable time.
 
 ### Review
 
@@ -556,50 +472,28 @@ The starting player is always the same.
 
 Although all the criticity I really appreciated the logic behind the fixed rule and the way the evolved rule works.
 
+<div style="page-break-after: always;"></div>
+
 ## Black box - Lab 9
+
 ### Description
+The aproach used is to test many different techniques and parameters to find out which one works better for the problem. The main idea that all methods have in common is to promote diversity and increase the explorations despite the explotation because the fitness landscape is really complex and has a lot of local maximums. They also try to exploit patterns in the genotype and the position of each gene.
+The methods used are:
+ - Hill climbing
+ - Genetic algorithm
+ - Genetic algorithm with isolation
 
-### Code
+The genotype of the individuals is a list of 1000 bits and the fitness function is unknown and it's evaluated by a black box function that returns a value between 0 and 1.
 
-#### Import
 
-```python
-import random
-from abc import abstractmethod
-import numpy as np
-import lab9_lib
-```
+### Hill climbing
+Hill climbing is the most basic aproach to the problem, it starts from a random population and then it tweaks each individual to generate `OFFSPRING_NUMBER` new individuals, then it selects the best one and repeat the process until it reaches the maximum number of iterations or it finds a solution.
 
-#### Individual class
+The tweak function divide the genotype in chunks and then shuffle them to generate a new genotype, this method is used to reuse the same genes in different positions.
 
-```python
-LOCI_NUMBER = 1000
-MAX_ITERATIONS = 1500
+This technique is really simple and it usually converges to a local maximum, but it is used as a benchmark for the other methods.
 
-class Individual:
-    def __init__(self, genotype=None):
-        self.genotype = genotype if genotype else random.choices([0, 1], k=LOCI_NUMBER)
-
-    @staticmethod
-    def evaluate_population(population, fitness_fuction) -> dict['Individual', float]:
-        return {ind: fitness_fuction(ind.genotype) for ind in population}
-    
-    @staticmethod
-    def difference(ind1, ind2) -> float:
-        return sum(np.logical_xor(ind1.genotype, ind2.genotype)) / LOCI_NUMBER if ind1 and ind2 else 1
-    
-    @staticmethod
-    @abstractmethod
-    def population(size) -> list['Individual']:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def algorithm() :
-        pass
-```
-
-#### Hill climbing
+#### Hill climbing code
 
 ```python
 class HillIndividual(Individual):
@@ -641,7 +535,28 @@ class HillIndividual(Individual):
         return max(population.items(), key=lambda x: x[1]), fitness_function.calls            
 ```
 
-#### Genetic algorithm
+### Genetic algorithm
+The genetic algorithm is a more complex and complete aproach to the problem, it also starts from a random population, each individual is evaluated and then using a `SELECTIVE_METHOD` are selected `OFFSPRING_NUMBER` individuals that will generate the next generation using the `CROSSOVER_METHOD` and the `MUTATION_METHOD`. The process is repeated until it reaches the maximum number of iterations or it finds a solution.
+
+The selection methods that are used to select the individuals are:
+ - Roulette selection: each individual has a probability to be selected based on its fitness, in this way the selective pressure is pretty high and it's hard to escape from a local maximum, because the potential solutions are discarted.
+ - Tournament selection: each individual is selected from a turnament of size `TOURNAMENT_SIZE` where the winner is the one with the highest fitness, with a moderate turnament size the selective pressure is low so many different individuals can be selected, but not too low too avoid convergence.
+ - Difference selection: each individual has a probability to be selected based on its fitness and the difference between the genotype of the individual and the genotype of the last selected individual, this is used too select the more fittest and the more different individuals. But the process is really slow because it needs to evaluate all the population for each individual and don't improve the results.
+  
+The crossover methods that are used to combine the genotypes of two individuals are:
+ - Scrumble crossover: the genotypes of two individuals are divided in gene and then the result genotype is generated by randomly selecting the gene from one of the two individuals.
+ - Cut crossover: the genotypes of two individuals is divided in two parts, the first part of the first individual is combined with the second part of the second individual.
+ - Chunk crossover: the genotypes of two individuals is divided in chunks and then the result genotype is generated by randomly selecting the chunk from one of the two individuals.
+
+The mutation methods that are used to mutate the genotype of an individual are:
+ - Single mutation: a random gene of the genotype is flipped.
+ - Multi mutation: all genes have probability  to be flipped.
+ - Chunk mutation: the genotype is divided in chunks and then the chunks are shuffled.
+
+The population and the offspring number are increased at each epoch due the complexity of the problem and more individuals have better chances to find a solution.
+The mutation probability is a trade off between mutation and crossover and also this can be increased at each epoch.
+
+#### Genetic algorithm code
 
 ```python
 
@@ -781,7 +696,10 @@ class GeneticIndividual(Individual):
         return max(population.items(), key=lambda x: x[1]), fitness_function.calls
 ```
 
-#### Genetic algorithm with isolation
+### Genetic algorithm with isolation
+The genetic algorithm with isolation is a variation of the genetic algorithm. The difference is that the population is divided in `ISLAND_NUMBER` islands and each island evolves separately for `ISLAND_ITERATIONS` iterations, then the population is shuffled and divided again in islands and the process is repeated until it reaches the maximum number of iterations or it finds a solution.
+
+#### Genetic algorithm with isolation code
 
 ```python
 class IsolationIndividual(GeneticIndividual):
@@ -816,7 +734,7 @@ class IsolationIndividual(GeneticIndividual):
         return max(population.items(), key=lambda x: x[1]), fitness_function.calls        
 ```
 
-#### Main
+### Main code
 
 ```python
 types = [HillIndividual, GeneticIndividual]
@@ -832,6 +750,44 @@ for problem in [1, 2, 5, 10]:
         print(f'\t\tBest evaluation: {best[1]:.2%}')
         print(f'\t\tNumber of calls: {round(calls/1000)} K')
 ```
+
+### Results
+After many tests iwth different combinations the best results obtained are:
+
+##### Problem 1
+- HillIndividual                                                                                                    
+  - Best evaluation: 49.60%
+  - Number of calls: 15 K
+- GeneticIndividual  
+  - Best evaluation: 100.00%
+  - Number of calls: 9 K
+
+##### Problem 2
+- HillIndividual
+   - Best evaluation: 26.19%
+   - Number of calls: 15 K
+- GeneticIndividual
+   - Best evaluation: 100.00%
+   - Number of calls: 27 K
+
+##### Problem 5
+- HillIndividual
+   - Best evaluation: 39.85%
+   - Number of calls: 15 K
+- GeneticIndividual
+    - Best evaluation: 100.00%
+    - Number of calls: 7243 K
+
+##### Problem 10
+- HillIndividual
+    - Best evaluation: 27.91%
+    - Number of calls: 15 K
+- GeneticIndividual
+    - Best evaluation: 36.08%
+    - Number of calls: 11389 K
+
+To obtain this results the selective method used is the tournament selection with a tournament size of 100, the crossover method used is the scrumble crossover and the mutation method used is the chunk mutation. 
+In this configuration the genotype tends to be more homogeneous and similar to the optimal solution, because in this problem the position of the bits are the most relevant part of the solution, so chenge the order helps to undestand how the position influence the fitness.
 
 ### Review
 
@@ -857,29 +813,40 @@ The idea of evaluate the population beyond their fitness with a sort of distance
 
 Summing up, the project hits the goal to discover and test multiple options to find the most suitable for this problem.
 
+<div style="page-break-after: always;"></div>
 
 ## Tic tac toe - Lab 10
+
 ### Description
-### Code
+Tic tac toe is a game where two players take turns placing their mark on a 3x3 grid. The goal is to place three marks in a straight line (horizontal, vertical or diagonal). The game ends when one player wins or when the grid is full and the game is a draw.
 
-#### Import
+The implemetation of the agent it uses a simple Q-learning algorithm with a table to store the Q-values. The state of the game aren't so huge so it's possible to store all the possible states in a table, but for improve the efficency and the effectiveness the symmetry of the board is used to reduce the number of states. 
 
-```python
-from itertools import combinations
-from random import choice, choices
-import numpy as np
-import pickle
-import time
-```
+Although the game is symple the agent is able to learn the optimal strategy, also against player that adopt more complex strategies.
 
-#### TicTacToe class
+### TicTacToe class
 
-The game is implemented as a sum of 15 game, so the goal is pick three number from 1 to 9 that sum to 15. If the numbers are displayed in a 3x3 grid as below the goal is to pick three numbers that are in a straight line (horizontal, vertical or diagonal), as tic tac toe game.
+The game is implemented as a sum of 15 game, so the goal is pick three number from 1 to 9 that sum to 15, so it's equivalent to the original game if the number are displayed in the following way:
 
-| **2** | **7** | **6** |
-|-------|-------|-------|
-| **9** | **5** | **1** |
-| **4** | **3** | **8** |
+<table>
+  <tr>
+    <td>2</td>
+    <td>7</td>
+    <td>6</td>
+  </tr>
+    <tr>
+        <td>9</td>
+        <td>5</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>3</td>
+        <td>8</td>
+    </tr>
+</table>
+
+#### TicTacToe code
 
 ```python
 SEQUENCE = [2, 7, 6, 9, 5, 1, 4, 3, 8]
@@ -1033,7 +1000,7 @@ class TicTacToe():
         return self , []
 ```
 
-#### Environment
+### Environment
 
 The environment gives reward, next state and if the game is finished given the current state and the action. The state is represented as a TicTacToe object, the action is represented as a number from 1 to 9, the reward is a number different for each situation (win, lose, draw, invalid move). The next state is a TicTacToe object, the game is finished if the game is won, lost, draw or if the action is invalid.
 
@@ -1044,6 +1011,8 @@ The environment implements dome strategies to play the game as the oppoent of th
 * me: let the human play
 
 The states are saved in a file, so they can be reused in the next run of the program. All the states are not equivalent to each other, so they are minimized using the symmetries of the game.
+
+#### Environment code
 
 ```python
 class Environment():
@@ -1210,7 +1179,7 @@ class Environment():
         return self.current_state, Environment.MOVE_REWARD, False
 ```
 
-#### Agent
+### Agent
 
 The agent is a Q-learning agent that use a Monte Carlo aproach, so from each game it updates the Q value function with the rewards of the environment. The Q values are an estimation of thw expected reward of each action in each state. The Q values are updated using the formula:
 
@@ -1220,7 +1189,9 @@ where `N(s, a)` is the number of times the agent has visited the state `s` and h
 
 The agent has a policy that is epsilon greedy, so it picks a random action with probability `epsilon/number of moves` and the best action with probability `epsilon/number of moves + (1 - epsilon)`, where the best action is the action with the highest Q value. The epsilon is decreased at each game, so the agent starts with a random policy and then it starts to exploit the Q values.
 
-The Q values is saved in a file, so it can be reused in the next run of the program. ALso the number of games played is saved in a file.
+The Q values is saved in a file, so it can be reused in the next run of the program. Also the number of games played is saved in a file.
+
+#### Agent code
 
 ```python
 class Agent():
@@ -1311,12 +1282,14 @@ class Agent():
             pickle.dump(self.episodes, fp)
 ```
 
-#### RL algorithm
+### RL algorithm
 
 The reinforcement learning algorithm is implemented as a function that run an episode of the game. The function takes as input the agent and the strategy of the opponent. The function returns three list of rewards, states and actions. 
 Each episode is runned until the game is finished. At each step the agent picks an action using the policy, then the environment gives the reward, the next state and if the game is finished. At the end of the episode the Q values are updated using the rewards, states and actions.
 
 If you want to train from zero delete the files `q_values.pkl` and `episodes.pkl` and run the code.
+
+#### RL algorithm code
 
 ```python
 def episode(agent, player, env_strategy=Environment.random_strategy, verbose=True): 
@@ -1423,12 +1396,18 @@ The points that could be improved are mainly two:
 The class structure seems to be overcomplicated and some structure are probably useless with some little changes, in particular the variables relate to the states and moves tracking that is used in the player class and in the game class
 The unconventional methods stimulate ideas but probably lead to under perform. in this case is not really necessary but I think that also know and implement some canonical approach could be useful.
 
+<div style="page-break-after: always;"></div>
+
 ## Quixo
 
 ### Description
 Quixo is a board game for two players where the goal is to be the first player to arrange five of their pieces in a row, either horizontally, vertically, or diagonally.
 The board is a 5x5 grid of squares and starts with all 25 squares empty.
 On each player turn, they choose one of the emtpy squares or one of their own pieces, turn it to the player's symbol and move it on one of the four sides of the board, pushing all the pieces in that row one square.
+
+The main idea of this implemetation is to exploit the power of Q-learning strategy and reinforcement learning in a game with a huge state space, so the agent needs a new way to calcualte Q values. 
+The player can also take advantage of the symmetries of the game to reduce the state space and to be helped with some hard-coded strategies/behaviours in some specific situations.
+To more generalize the agent strategy serveral options of training are implemented to understand which one gives the most robust and effective strategy.
 
 ### DQN player
 The player is implemented as a DQN agent, so it approximates the Q function using a neural network and the Q values are used to select the best action to take in a given state of the game.
@@ -1479,6 +1458,107 @@ The player implements a trace of the last moves done in a specific state to avoi
 #### Board normalization
 The board of each state is normalized to a canonical form that exploits simmetries if `TRANSFORMATION` is set to `True`. The board is transformed in all the possible ways and the one with the lowest hash value is chosen as the canonical form and also the moves are tranformed coerently with the board. To speed up the process the most used transformations are stored in a dinamic dictionary used as a cache.
 
+##### Board normalization code
+
+```python
+def transform_board(board: torch.Tensor, transformations: list[(Callable, Union[int, tuple])]) -> torch.Tensor:
+    '''Returns the transformed board after applying the given transformations'''
+    
+    transformed_board = board.clone()
+
+    for function, arg in transformations:
+            transformed_board = function(transformed_board, arg)
+    
+    return transformed_board
+
+def transform_move(from_pos: tuple[int, int], slide: Move, transformations: list[(Callable, Union[int, None])]) -> tuple[tuple[int, int], Move]:
+    '''Returns the transformed move after applying the given transformations'''
+    
+    for function, arg in transformations:
+        if arg is None:
+            from_pos, slide = function(from_pos, slide)
+        else:
+            from_pos, slide = function(from_pos, slide, arg)
+    
+    return from_pos, slide
+
+def normalize_board(board: torch.Tensor) -> tuple[torch.Tensor, list[(Callable, Union[int, None])]]:
+    '''Returns the transformations to apply to the game to obtain the normalized board, all the equivalent boards have the same normalized board'''
+    
+    board_hash = hash(str(board.flatten()))
+    normalized_board = board.clone()
+    transformations = []
+
+    equivalent_board = board.clone() 
+
+    for i in range(2):
+        for j in range(4):
+            assert board_hash != hash(str(equivalent_board.flatten())) or (board_hash == hash(str(normalized_board.flatten())) and torch.equal(normalized_board, equivalent_board)), "Hashes are not equal"
+            
+            if board_hash > hash(str(equivalent_board.flatten())):
+                board_hash = hash(str(equivalent_board.flatten())) 
+                transformations = [(torch.flip, None)] * i + [(torch.rot90, j)] if j > 0 else []
+                normalized_board = equivalent_board.clone()
+
+            equivalent_board = transform_board(equivalent_board, [(torch.rot90, 1)])
+        equivalent_board = transform_board(equivalent_board, [(torch.flip, (0,))])
+
+    return normalized_board, transformations
+
+def get_move_transformations(transformations: list[(Callable, Union[int, None])]) -> list[(Callable, Union[int, None])]:
+    '''Returns the transformations to apply to the move from the board transformations'''
+    
+    move_transformations = []
+    
+    for function, args in transformations:
+        if function == torch.flip:
+            move_transformations.append((move_flip, None))
+        elif function == torch.rot90:
+            move_transformations.append((move_rot90, args))
+
+    return move_transformations
+
+def get_inverse_transformation(transformations: list[(Callable, Union[int, None])]) -> list[(Callable, Union[int, None])]:
+    '''Returns the inverse transformation of the given transformations'''
+    
+    inverse_transformations = []
+    
+    for function, args in transformations:
+        if args is None or type(args) != int:
+            inverse_transformations.append((function, args))
+        else:
+            inverse_transformations.append((function, -args))
+
+    return inverse_transformations
+
+def move_rot90(from_pos: tuple[int, int], slide: Move, times: int) -> tuple[tuple[int, int], Move]:
+    '''Returns the move after the given number of rotations'''
+    
+    for _ in range(abs(times)):
+        from_pos = (from_pos[1], N - 1 - from_pos[0]) if times > 0 else (N - 1 - from_pos[1], from_pos[0])
+        
+        if slide == Move.TOP:
+            slide = Move.LEFT if times > 0 else Move.RIGHT
+        elif slide == Move.BOTTOM:
+            slide = Move.RIGHT if times > 0 else Move.LEFT
+        elif slide == Move.LEFT:
+            slide = Move.BOTTOM if times > 0 else Move.TOP
+        else:
+            slide = Move.TOP if times > 0 else Move.BOTTOM
+
+    return from_pos, slide
+
+def move_flip(from_pos: tuple[int, int], slide: Move) -> tuple[tuple[int, int], Move]:
+    '''Returns the move after the given number of rotations'''
+    
+    if slide == Move.TOP:
+        slide = Move.BOTTOM
+    elif slide == Move.BOTTOM:
+        slide = Move.TOP
+
+    return (from_pos[0], N - 1 - from_pos[1]), slide
+```
+
 #### DQN player code
 
 ```python
@@ -1495,7 +1575,6 @@ class DQNPlayer(Player):
         self.path = ""
 
         '''Attributes about the network'''
-
 
         if (self.mode == 'test' or load) and os.path.exists(path):
             mlp_0_size = int(re.search(r'_(\d+)S', path).group(1)) if re.search(r'_(\d+)S', path) else 0
@@ -1560,7 +1639,8 @@ class DQNPlayer(Player):
                 from_pos, move = transform_move(norm_from_pos, norm_move, get_move_transformations(get_inverse_transformation(transformations))) if TRANSFORMATION else (norm_from_pos, norm_move)
                 if self.invalid_game and np.array_equal(self.invalid_game.get_board(), game.get_board()) and (from_pos, move) in self.invalid_moves:
                     k += 1
-                    if k == ACTION_SPACE - 1:
+                    if k >= ACTION_SPACE - 1:
+                        k = 0
                         self.invalid_moves = []
                 else:
                     ok = True
@@ -1643,6 +1723,8 @@ class DQNPlayer(Player):
 ### Environment
 The main goal of the environment is to simulate a match between the agent and a environment player that can be chosen e.g. the `RandomPlayer`, The game is suddivided in steps, where each step is a turn of both player. The environment takes the action of the agent and if it's valid return the next state, the reward and if the game is ended. The next state is the game board after the agent and the environment player have done their moves.
 
+The enviroment game is represented as a `GameExt` object that extends the `Game` class. It exposes the method `move` and some auxiliary methods.
+
 #### Environment code
 
 ```python
@@ -1709,6 +1791,139 @@ class Environment(object):
         return deepcopy(self.game), MOVE_REWARD, False
 ```
 
+##### GameExt code
+
+```python
+class GameExt(Game):
+    '''Similar to the Game class with public methods and different print'''
+    def __init__(self, board=None, n=N) -> None:
+        super().__init__()
+        self._board = board if board is not None else np.ones((n, n), dtype=np.uint8) * -1
+        self.n = n
+
+    def move(self, from_pos: tuple[int, int], slide: Move, player_id: int) -> bool:
+        '''Perform a move'''
+        if player_id > 2:
+            return False
+        # Oh God, Numpy arrays
+        prev_value = deepcopy(self._board[(from_pos[1], from_pos[0])])
+        acceptable = self.__take((from_pos[1], from_pos[0]), player_id)
+        if acceptable:
+            acceptable = self.__slide((from_pos[1], from_pos[0]), slide)
+            if not acceptable:
+                self._board[(from_pos[1], from_pos[0])] = deepcopy(prev_value)
+        return acceptable
+    
+    def print(self):
+        '''Prints the board'''
+        for row in self._board:
+            for cell in row:
+                print(CHARS[cell], end=' ')
+            print()  
+
+    def set_current_player(self, player_id: int) -> None:
+        '''Set the current player'''
+        self.current_player_idx = player_id
+
+    def __take(self, from_pos: tuple[int, int], player_id: int) -> bool:
+        '''Take piece'''
+        # acceptable only if in border
+        acceptable: bool = (
+            # check if it is in the first row
+            (from_pos[0] == 0 and from_pos[1] < self.n)
+            # check if it is in the last row
+            or (from_pos[0] == self.n - 1 and from_pos[1] < self.n)
+            # check if it is in the first column
+            or (from_pos[1] == 0 and from_pos[0] < self.n)
+            # check if it is in the last column
+            or (from_pos[1] == self.n - 1 and from_pos[0] < self.n)
+            # and check if the piece can be moved by the current player
+        ) and (self._board[from_pos] < 0 or self._board[from_pos] == player_id)
+        if acceptable:
+            self._board[from_pos] = player_id
+        return acceptable
+
+    def __slide(self, from_pos: tuple[int, int], slide: Move) -> bool:
+        '''Slide the other pieces'''
+        # define the corners
+        SIDES = [(0, 0), (0, self.n - 1), (self.n - 1, 0), (self.n - 1, self.n - 1)]
+        # if the piece position is not in a corner
+        if from_pos not in SIDES:
+            # if it is at the TOP, it can be moved down, left or right
+            acceptable_top: bool = from_pos[0] == 0 and (
+                slide == Move.BOTTOM or slide == Move.LEFT or slide == Move.RIGHT
+            )
+            # if it is at the BOTTOM, it can be moved up, left or right
+            acceptable_bottom: bool = from_pos[0] == self.n - 1 and (
+                slide == Move.TOP or slide == Move.LEFT or slide == Move.RIGHT
+            )
+            # if it is on the LEFT, it can be moved up, down or right
+            acceptable_left: bool = from_pos[1] == 0 and (
+                slide == Move.BOTTOM or slide == Move.TOP or slide == Move.RIGHT
+            )
+            # if it is on the RIGHT, it can be moved up, down or left
+            acceptable_right: bool = from_pos[1] == self.n - 1 and (
+                slide == Move.BOTTOM or slide == Move.TOP or slide == Move.LEFT
+            )
+        # if the piece position is in a corner
+        else:
+            # if it is in the upper left corner, it can be moved to the right and down
+            acceptable_top: bool = from_pos == (0, 0) and (
+                slide == Move.BOTTOM or slide == Move.RIGHT)
+            # if it is in the lower left corner, it can be moved to the right and up
+            acceptable_left: bool = from_pos == (self.n - 1, 0) and (
+                slide == Move.TOP or slide == Move.RIGHT)
+            # if it is in the upper right corner, it can be moved to the left and down
+            acceptable_right: bool = from_pos == (0, self.n - 1) and (
+                slide == Move.BOTTOM or slide == Move.LEFT)
+            # if it is in the lower right corner, it can be moved to the left and up
+            acceptable_bottom: bool = from_pos == (self.n - 1, self.n - 1) and (
+                slide == Move.TOP or slide == Move.LEFT)
+        # check if the move is acceptable
+        acceptable: bool = acceptable_top or acceptable_bottom or acceptable_left or acceptable_right
+        # if it is
+        if acceptable:
+            # take the piece
+            piece = self._board[from_pos]
+            # if the player wants to slide it to the left
+            if slide == Move.LEFT:
+                # for each column starting from the column of the piece and moving to the left
+                for i in range(from_pos[1], 0, -1):
+                    # copy the value contained in the same row and the previous column
+                    self._board[(from_pos[0], i)] = self._board[(
+                        from_pos[0], i - 1)]
+                # move the piece to the left
+                self._board[(from_pos[0], 0)] = piece
+            # if the player wants to slide it to the right
+            elif slide == Move.RIGHT:
+                # for each column starting from the column of the piece and moving to the right
+                for i in range(from_pos[1], self._board.shape[1] - 1, 1):
+                    # copy the value contained in the same row and the following column
+                    self._board[(from_pos[0], i)] = self._board[(
+                        from_pos[0], i + 1)]
+                # move the piece to the right
+                self._board[(from_pos[0], self._board.shape[1] - 1)] = piece
+            # if the player wants to slide it upward
+            elif slide == Move.TOP:
+                # for each row starting from the row of the piece and going upward
+                for i in range(from_pos[0], 0, -1):
+                    # copy the value contained in the same column and the previous row
+                    self._board[(i, from_pos[1])] = self._board[(
+                        i - 1, from_pos[1])]
+                # move the piece up
+                self._board[(0, from_pos[1])] = piece
+            # if the player wants to slide it downward
+            elif slide == Move.BOTTOM:
+                # for each row starting from the row of the piece and going downward
+                for i in range(from_pos[0], self._board.shape[0] - 1, 1):
+                    # copy the value contained in the same column and the following row
+                    self._board[(i, from_pos[1])] = self._board[(
+                        i + 1, from_pos[1])]
+                # move the piece down
+                self._board[(self._board.shape[0] - 1, from_pos[1])] = piece
+        return acceptable
+```
+
 ### Last move player
 An other type of player is the `LastMovePlayer` that is based on any other player's strategy but it analyses the board to find if there is a move that can win the game or if the opponent can win the game in the next move, in this case it blocks the opponent if it's possible. In the other cases it plays as the base player.
 
@@ -1720,7 +1935,7 @@ To avoid losing the player uses the base player to find the best move and then i
 #### Role
 The `LastMovePlayer` can be used as agent or as environment player, in the first case the base player can be trained as usual, in the second case the agent it's trained and tested against a more challenging player.
 
-#### Last move player code 
+#### Last move player code
 
 ```python
 class LastMovePlayer(Player):
@@ -1922,15 +2137,16 @@ During the training many combinations and hyperparameters have been tested that 
 ##### Constants
 
 ```python
-MODE = 'test'           # 'train' or 'test' 
+MODE = 'train'          # 'train' or 'test' 
 N = 5                   # Board size
 VERSION = 0             # Version of the model to use
-ITERATIONS = 50_000  # Number of iterations to train
+ITERATIONS = 1_000_000  # Number of iterations to train
 TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network
-INVALID_MOVES = False     # Allow invalid moves during the training, so the agent lose if it makes an invalid move
-LOAD = 'mix'         # 'simple' or 'mix' select the model to load for the environment
+INVALID_MOVES = False   # Allow invalid moves during the training, so the agent lose if it makes an invalid move
+LAST_MOVE = True        # Use the LastMovePlayer 
+LOAD = 'mix'            # 'simple' or 'mix' select the model to load for the environment
 
 '''Number of possible actions'''
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_SPACE else 4 * (N - 1) * 4 - 4*N 
@@ -1954,7 +2170,7 @@ LOSE_REWARD = 0
 DRAW_REWARD = 0
 
 '''Values for the DQN player'''
-MLP_0_HIDDEN_SIZE = 1024
+MLP_0_HIDDEN_SIZE = 0
 MLP_1_HIDDEN_SIZE = 512
 MLP_2_HIDDEN_SIZE = 256
 
@@ -1969,15 +2185,15 @@ EPSILON_B = 1000 // BATCH_SIZE
 '''Values for load and save'''
 PATH = './models/'
 
-def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=INVALID_SPACE, invalid_moves=INVALID_MOVES, transformation=TRANSFORMATION, load=LOAD, mlp_0_size=MLP_0_HIDDEN_SIZE) -> str:
+def path(path=PATH, n=N, version=VERSION, iterations=ITERATIONS, invalid_space=INVALID_SPACE, invalid_moves=INVALID_MOVES, transformation=TRANSFORMATION, last_move=LAST_MOVE, load=LOAD, mlp_0_size=MLP_0_HIDDEN_SIZE) -> str:
     '''Returns the path of the model to use'''
 
-    return f'{path}model_{n}_v{version}_{iterations // 1000}K{"_IS" if invalid_space else ""}{"_IM" if invalid_moves else ""}{"_T" if transformation else ""}{f"_{load.upper()}" if load != "simple" else ""}{f"_{mlp_0_size}S" if mlp_0_size != 0 else ""}.pth'
+    return f'{path}model_{n}_v{version}_{iterations // 1000}K{"_IS" if invalid_space else ""}{"_IM" if invalid_moves else ""}{"_T" if transformation else ""}{"_LM" if last_move else ""}{f"_{load.upper()}" if load != "simple" else ""}{f"_{mlp_0_size}S" if mlp_0_size != 0 else ""}.pth'
 
 MODEL_NAME = path()
 LOAD_PATHS = {
     'simple': [path(version=v) for v in range(VERSION)],
-    'mix': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0, load='simple') for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
+    'mix': [path(version=v, iterations=i, invalid_moves=im, mlp_0_size=0, load='simple', last_move=False) for v in range(3) for i in [100_000, 1_000_000] for im in [False, True]],
     'cust': [
         f'{PATH}model_5_v0_100K_IM.pth',
         f'{PATH}model_5_v0_100K.pth',
@@ -1995,9 +2211,114 @@ LOAD_PATHS = {
 ##### Training functions
 
 ```python
+def game(env: Environment, player: DQNPlayer, verbose: bool = False) -> int:
+    '''Run a game between the player and the environment'''
+    states, actions, rewards = [], [], []
+    state, done = env.reset()
+
+    states.append(state)
+    if verbose:
+        print('Initial state:' + ' ' * 50)
+        state.print()
+
+    while not done:
+        state, reward, done = None, None, None
+
+        while state is None and reward is None and done is None:
+            '''Agent move'''
+            action = player.make_move(env.game)
+
+            '''Environment move'''
+            state, reward, done = env.step(action)
+            if verbose and state is None and reward is None and done is None:
+                print(f'Invalid move : {action}')
+        
+        actions.append(action)
+        rewards.append(reward)
+        states.append(state)
+
+        if verbose:
+            print(f'Move: {action}')
+            state.print()
+            print(f'Reward: {reward}')
+            print()
+
+    if MODE == 'train':
+        player.update(states, actions, rewards)
+    return rewards
+
+if __name__ == '__main__':
+    win = 0
+    iterations = ITERATIONS if MODE == 'train' else TEST_ITERATION
+    assert all([get_index_from_move(get_move_from_index(i)) == i for i in range(ACTION_SPACE)]), 'Wrong index conversion'
+
+    '''Select the player for the agent'''
+    if MODE == 'train':
+        player = LastMovePlayer(DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1))) if LAST_MOVE else DQNPlayer(mode=MODE, load=True, path=path(version=VERSION - 1))
+    else:
+        player = LastMovePlayer(DQNPlayer(mode=MODE)) if LAST_MOVE else DQNPlayer(mode=MODE)
+
+    '''Select all the players for the environment, also the DQNPlayer can be used'''
+    env_player = [LastMovePlayer()] if LAST_MOVE else [RandomPlayer()]
+    env_player += [LastMovePlayer(DQNPlayer(mode='test', path=p)) if LAST_MOVE else DQNPlayer(mode='test', path=p) for p in LOAD_PATHS[LOAD]] 
+    for path in LOAD_PATHS[LOAD]:
+        print(path)
+    
+    print(f'Agent player: ')
+    if type(player) == DQNPlayer:
+        print(f'\tDQN player {player.path}')
+    elif type(player) == LastMovePlayer:
+        print (f'\tLastMove player -> ', end='')
+        if type(player.base_player) == DQNPlayer:
+            print(f'DQN player {player.base_player.path}')
+        else:
+            print(f'Random player')
+    else:
+        print(f'\tRandom player')
+    print(f'Enviroment players: ')
+    for p in env_player:
+        if type(p) == DQNPlayer:
+            print(f'\tDQN player {p.path}')   
+        elif type(p) == LastMovePlayer:
+            print (f'\tLastMove player -> ', end='')
+            if type(p.base_player) == DQNPlayer:
+                print(f'DQN player {p.base_player.path}')
+            else:
+                print(f'Random player')
+        else:
+            print(f'\tRandom player')
+            
+
+    start = time.time()
+    for i in range(iterations):
+
+        env = Environment(random.choice(env_player))
+
+        '''Play a game'''
+        rewards = game(env, player)
+
+        '''Print and update the win rate'''
+        if rewards[-1] == WIN_REWARD:
+            win += 1
+        if i % BATCH_SIZE == 0:
+            execution_time = time.time() - start
+            print(f'Game {i} - N turns: {len(rewards)} - Reward: {rewards[-1]} - Win rate: {win * 100 / (i + 1):.2f} % {f"E: {EPSILON_B / (EPSILON_B + i//BATCH_SIZE):.3f}" if MODE == "train" and EPSILON_MODE == 1 else ""} {int(execution_time//3600)}h {int((execution_time%3600)//60)}m/{int((execution_time*iterations/(i+1))//3600)}h {int(((execution_time*iterations/(i+1))%3600)//60)}m', end='\r')
+    
+    stop = time.time()
+
+    print(f'Win rate: {win * 100 / iterations:.2f} % - Time: {stop - start:.2e} s - Time/iteration: {(stop - start)/iterations:.3f} s' + ' ' * 50)
+    
+    '''Save the trained model'''
+    if MODE == 'train':
+        net = player.base_player.target_net.state_dict() if type(player) == LastMovePlayer else player.target_net.state_dict()
+        torch.save(net, MODEL_NAME)
+```
   
 ### Results
-The agent is trained to win against as many players as possible, so it tries to find the best and more general policy to win the game.
+The agent is trained to win against as many players as possible with the goal to find the best and more general policy to win the game. The best agent is a `LastMovePlayer` that uses a `DQNPlayer` as base player, it's trained with the load `mix` so against many different players that also use the `LastMovePlayer` and the `DQNPlayer` as base player. The agent is not able to defeats the adversary with high percentage but it condenses the knowledge of all the previous agents in only one. Any other simpler agent is not able to win against the best one so it can be considered as a good trade-off between general strategy and performance.
+
+An other good option is an agent trained as a `DQNPlayer` with load `mix` where the other player also doesn't use the `LastMovePlayer` but only the `DQNPlayer`. It also has a one more layer in the network of 1024 neurons (4 total) and it's trained for 2000K iterations. 
+During the test the `DQNPlayer` is added inside the `LastMovePlayer` to improve the performance and it obtain better results against non `LastMovePlayer` players, but loewer results against `LastMovePlayer` players, compared to the previous agent.
 
 #### Usage
 To use the agent the following code can be used:
@@ -2006,12 +2327,6 @@ from player import DQNPlayer, LastMovePlayer
 player = LastMovePlayer(DQNPlayer(mode='test', path'path/to/agent_model.pth'))
 ```
 
-The path of the most successful agents are:
- 1. `models/model_5_2000K_MIX_1024S.pth`
- 2. . . .
+The path of the most successful agent is: `models/model_5_v0_1000K_LM_MIX.pth`
 
-### Extra - Human player
-The `HumanPlayer` is a player that can be used to play against the agent, it's a simple player that asks the user to insert the action to do and it's used to understand how good is the agent policy.  
-
-
-
+An other good agent is: `models/model_5_v0_2000K_MIX_1024S.pth`

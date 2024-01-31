@@ -24,11 +24,11 @@ class MyPlayer(Player):
 
 if __name__ == '__main__':
     sum = 0
-    print("Testing...")
-    player1 = LastMovePlayer()
-    player0 = LastMovePlayer()
+
+    player1 = LastMovePlayer(DQNPlayer(mode='test', path='models/model_5_v0_2000K_MIX_1024S.pth'))
+    player0 = LastMovePlayer(DQNPlayer(mode='test', path='models/model_5_v0_1000K_LM_MIX.pth')
     for i in range(1000):
-        g = GameExt()
+        g = Game()
         # g.print()
         winner = g.play(player0, player1)
         sum = sum + winner

@@ -1,16 +1,15 @@
 from enum import Enum
 
-
-MODE = 'train'           # 'train' or 'test' 
+MODE = 'test'          # 'train' or 'test' 
 N = 5                   # Board size
 VERSION = 0             # Version of the model to use
-ITERATIONS = 800_000  # Number of iterations to train
+ITERATIONS = 1_000_000  # Number of iterations to train
 TEST_ITERATION = 5_000  # Number of iterations to test
 INVALID_SPACE = False   # Include invalid moves in the action space
 TRANSFORMATION = False  # Use board transformations inside the network
-INVALID_MOVES = False     # Allow invalid moves during the training, so the agent lose if it makes an invalid move
-LAST_MOVE = True       # Use the LastMovePlayer 
-LOAD = 'mix'         # 'simple' or 'mix' select the model to load for the environment
+INVALID_MOVES = False   # Allow invalid moves during the training, so the agent lose if it makes an invalid move
+LAST_MOVE = False        # Use the LastMovePlayer 
+LOAD = 'mix'            # 'simple' or 'mix' select the model to load for the environment
 
 '''Number of possible actions'''
 ACTION_SPACE = 4 * (N - 1) * 4 if INVALID_SPACE else 4 * (N - 1) * 4 - 4*N 
